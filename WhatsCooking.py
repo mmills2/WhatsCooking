@@ -44,10 +44,20 @@ def greeter_node(state: AgentState):
 builder = StateGraph(AgentState)
 
 # adds nodes to graph
-builder.add_node("greeter", greet_node)
+builder.add_node("greeter", greeter_node)
 
 # adds edges between nodes
 builder.add_edge("greeter", END)
 
+# sets start of graph
+builder.set_entry_point("greeter")
+
 # compiles graph so application can be run
 graph = builder.compile(checkpointer = memory)
+
+# stores history of graph states
+thread = {"configurable": {"thread_id": "1"}}
+
+# runs the application and prints out the AgentState after each node runs
+for event in graph.stream({"preferences": None}, thread):
+    print(event)
