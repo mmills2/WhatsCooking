@@ -24,12 +24,21 @@ tavily = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
 # stores inputs and outputs for nodes
 class AgentState(TypedDict):
     preferences: str
+    dishesFound: List[str]
+
+# stores list of queries and is provides structured output for generating queries
+class Queries(BaseModel):
+    queriesList: List[str]
 
 # system prompts for agents
 GREETER_PROMPT = """You are a professional recipe recommender inquiring about what kind of recipe the user \
 would like to cook. Make sure to greet the user. You must ask what kind of food they are in the mood for. Tell \
 the user if they do not know what they are in the mood for that is ok. Ask if the user has any other preferences. \
 Don't say anything after asking for preferences."""
+
+DISH_SEARCH_PROMPT = """You are a researcher with the task of finding food dishes. You may be given preferences \
+about the types of food dishes to find. Generate a list of search queries to find relevant food dishes. Only generate \
+1 query."""
 
 # greeter agent
 def greeter_node(state: AgentState):
