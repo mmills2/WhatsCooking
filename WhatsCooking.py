@@ -49,6 +49,18 @@ def greeter_node(state: AgentState):
     userInput = input(": ")
     return {"preferences": userInput}
 
+# dish searcher agent
+def dish_searcher_node(state: AgentState):
+    generatedQueries = model.with_structured_output(Queries).invoke([
+        SystemMessage(content = DISH_SEARCH_PROMPT)
+        HumanMessage(content = f"My food dish preferences are: {state['preferences']}")
+    ])
+    dishesFound = []
+    for generatedQuery in generatedQueries:
+        searchResults = tavily.search(query = generatedQuery, max_results = 1)
+        for searchResult in searchResults:
+            print(searchResult)
+
 # builds workflow of graph from added nodes and edges
 builder = StateGraph(AgentState)
 
