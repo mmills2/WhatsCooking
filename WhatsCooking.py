@@ -30,3 +30,12 @@ GREETER_PROMPT = """You are a professional recipe recommender inquiring about wh
 would like to cook. Make sure to greet the user. You must ask what kind of food they are in the mood for. Tell \
 the user if they do not know what they are in the mood for that is ok. Ask if the user has any other preferences. \
 Don't say anything after asking for preferences."""
+
+# greeter agent
+def greeter_node(state: AgentState):
+    response = model.invoke([
+        SystemMessage(content = GREETER_PROMPT)
+    ])
+    print(response.content)
+    userInput = input(": ")
+    return {"preferences": userInput}
