@@ -20,3 +20,13 @@ memory = SqliteSaver.from_conn_string(":memory:")
 
 # initializes Tavily search engine tool
 tavily = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
+
+# stores inputs and outputs for nodes
+class AgentState(TypedDict):
+    preferences: str
+
+# system prompts for agents
+GREETER_PROMPT = """You are a professional recipe recommender inquiring about what kind of recipe the user \
+would like to cook. Make sure to greet the user. You must ask what kind of food they are in the mood for. Tell \
+the user if they do not know what they are in the mood for that is ok. Ask if the user has any other preferences. \
+Don't say anything after asking for preferences."""
