@@ -52,7 +52,7 @@ def greeter_node(state: AgentState):
 # dish searcher agent
 def dish_searcher_node(state: AgentState):
     generatedQueries = model.with_structured_output(Queries).invoke([
-        SystemMessage(content = DISH_SEARCH_PROMPT)
+        SystemMessage(content = DISH_SEARCH_PROMPT),
         HumanMessage(content = f"My food dish preferences are: {state['preferences']}")
     ])
     dishesFound = []
@@ -66,9 +66,11 @@ builder = StateGraph(AgentState)
 
 # adds nodes to graph
 builder.add_node("greeter", greeter_node)
+builder.add_node("dish_search", dish_searcher_node)
 
 # adds edges between nodes
-builder.add_edge("greeter", END)
+builder.add_edge("greeter", "dish_search")
+builder.add_edge("dish_search", END)
 
 # sets start of graph
 builder.set_entry_point("greeter")
