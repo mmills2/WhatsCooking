@@ -39,3 +39,15 @@ def greeter_node(state: AgentState):
     print(response.content)
     userInput = input(": ")
     return {"preferences": userInput}
+
+# builds workflow of graph from added nodes and edges
+builder = StateGraph(AgentState)
+
+# adds nodes to graph
+builder.add_node("greeter", greet_node)
+
+# adds edges between nodes
+builder.add_edge("greeter", END)
+
+# compiles graph so application can be run
+graph = builder.compile(checkpointer = memory)
