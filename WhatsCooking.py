@@ -41,12 +41,14 @@ would like to cook. Make sure to greet the user. You must ask what kind of food 
 the user if they do not know what they are in the mood for that is ok. Ask if the user has any other preferences. \
 Don't say anything after asking for preferences."""
 
-DISH_SEARCH_PROMPT = """You are a researcher with the task of finding food dishes. You may be given preferences \
-about the types of food dishes to find. Generate a list of search queries to find relevant food dishes. Only generate \
+DISH_SEARCH_PROMPT = """You are a researcher with the task of finding food recipes. You may be given preferences \
+about the types of food recipes to find. Generate a list of search queries to find relevant food recipes. Only generate \
 1 query."""
 
 DISH_LIST_FORMER_PROMPT = """You are a documenter with the task of documenting food dishes. You must record the \
-food dish name. Return a list of food dish names based on the information provided."""
+food dish name. Do not include any information in the dish name besides the name of the dish. Do not include the word \
+recipe in the dish name. Capitalize the dish names as if they were a title. Return a list of food dish names based on \
+the information provided."""
 
 # greeter agent
 def greeter_node(state: AgentState):
@@ -65,19 +67,19 @@ def dish_searcher_node(state: AgentState):
     ])
     dishSearchResults = []
     for generatedQuery in generatedQueries.queriesList:
-        searchResults = tavily.search(query = generatedQuery, max_results = 1)
+        searchResults = tavily.search(query = generatedQuery, max_results = 2)
         for searchResult in searchResults['results']:
             dishSearchResults.append(searchResult['content'])
     return {"dishSearchResults": dishSearchResults}
 
 # dish list former agent
 def dish_list_former_node(state: AgentState):
-    dishResearch = "\n\n".join(state['dishSearchResults'])
-    response = model.with_structured_output(Dishes).invoke([
+    dishesResearch = "\n\n".join(state['dishSearchResults'])
+    dishes = model.with_structured_output(Dishes).invoke([
         SystemMessage(content = DISH_LIST_FORMER_PROMPT),
-        HumanMessage(content = dishResearch)
+        HumanMessage(content = dishesResearch)
     ])
-    print(response)
+    return {"dishes": dishes.dishesList}
 
 # builds workflow of graph from added nodes and edges
 builder = StateGraph(AgentState)
@@ -85,10 +87,13 @@ builder = StateGraph(AgentState)
 # adds nodes to graph
 builder.add_node("greeter", greeter_node)
 builder.add_node("dish_search", dish_searcher_node)
+builder.add_node("list_former", dish_list_former_node)
 
 # adds edges between nodes
 builder.add_edge("greeter", "dish_search")
-builder.add_edge("dish_search", END)
+builder.add_edge("dish_search", "list_former")
+builder.add_edge("list_former", END)
+
 
 # sets start of graph
 builder.set_entry_point("greeter")
