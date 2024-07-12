@@ -25,7 +25,9 @@ tavily = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
 class AgentState(TypedDict):
     preferences: str
     dishSearchResults: List[str]
-    dishes: List[str]
+    dishesFromSearch: List[str]
+    dishesSeen: List[str]
+    dishesToShow: List[str]
 
 # stores list of queries and provides structured output for generating queries
 class Queries(BaseModel):
@@ -79,7 +81,12 @@ def dish_list_former_node(state: AgentState):
         SystemMessage(content = DISH_LIST_FORMER_PROMPT),
         HumanMessage(content = dishesResearch)
     ])
-    return {"dishes": dishes.dishesList}
+    return {"dishesFromSearch": dishes.dishesList}
+
+# dish list comparing tool
+def dish_list_comparer_node(state: AgentState):
+    dishesToShow = list(set(state['dishesFromSearch']) - set(state['dishesSeen']))
+    print(dishesToShow)
 
 # builds workflow of graph from added nodes and edges
 builder = StateGraph(AgentState)
@@ -105,5 +112,5 @@ graph = builder.compile(checkpointer = memory)
 thread = {"configurable": {"thread_id": "1"}}
 
 # runs the application and prints out the AgentState after each node runs
-for event in graph.stream({"preferences": None}, thread):
+for event in graph.stream({"dishesSeen": []}, thread):
     print(event)
