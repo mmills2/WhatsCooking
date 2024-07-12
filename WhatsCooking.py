@@ -24,7 +24,7 @@ tavily = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
 # stores inputs and outputs for nodes
 class AgentState(TypedDict):
     preferences: str
-    dishesFound: List[str]
+    dishSearchResults: List[str]
 
 # stores list of queries and is provides structured output for generating queries
 class Queries(BaseModel):
@@ -55,11 +55,12 @@ def dish_searcher_node(state: AgentState):
         SystemMessage(content = DISH_SEARCH_PROMPT),
         HumanMessage(content = f"My food dish preferences are: {state['preferences']}")
     ])
-    dishesFound = []
-    for generatedQuery in generatedQueries:
+    dishSearchResults = []
+    for generatedQuery in generatedQueries.queriesList:
         searchResults = tavily.search(query = generatedQuery, max_results = 1)
-        for searchResult in searchResults:
-            print(searchResult)
+        for searchResult in searchResults['results']:
+            dishSearchResults.append(searchResult['content'])
+    return {"dishSearchResults": dishSearchResults}
 
 # builds workflow of graph from added nodes and edges
 builder = StateGraph(AgentState)
