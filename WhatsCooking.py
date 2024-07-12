@@ -95,12 +95,13 @@ builder = StateGraph(AgentState)
 builder.add_node("greeter", greeter_node)
 builder.add_node("dish_search", dish_searcher_node)
 builder.add_node("list_former", dish_list_former_node)
+builder.add_node("list_comparer", dish_list_comparer_node)
 
 # adds edges between nodes
 builder.add_edge("greeter", "dish_search")
 builder.add_edge("dish_search", "list_former")
-builder.add_edge("list_former", END)
-
+builder.add_edge("list_former", "list_comparer")
+builder.add_edge("list_comparer", END)
 
 # sets start of graph
 builder.set_entry_point("greeter")
