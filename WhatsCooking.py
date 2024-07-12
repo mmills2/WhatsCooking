@@ -48,9 +48,9 @@ about the types of food recipes to find. Generate a list of search queries to fi
 1 query."""
 
 DISH_LIST_FORMER_PROMPT = """You are a documenter with the task of documenting food dishes. You must record the \
-food dish name. Do not include any information in the dish name besides the name of the dish. Do not include the word \
-recipe in the dish name. Capitalize the dish names as if they were a title. Return a list of food dish names based on \
-the information provided."""
+food dish name. Make sure the food dish name you record is a name of an actual food. Do not include any information \
+in the dish name besides the name of the dish. Do not include the word recipe in the dish name. Capitalize the dish \
+names as if they were a title. Return a list of food dish names based on the information provided."""
 
 # greeter agent
 def greeter_node(state: AgentState):
@@ -69,7 +69,7 @@ def dish_searcher_node(state: AgentState):
     ])
     dishSearchResults = []
     for generatedQuery in generatedQueries.queriesList:
-        searchResults = tavily.search(query = generatedQuery, max_results = 2)
+        searchResults = tavily.search(query = generatedQuery, max_results = 3)
         for searchResult in searchResults['results']:
             dishSearchResults.append(searchResult['content'])
     return {"dishSearchResults": dishSearchResults}
@@ -86,7 +86,11 @@ def dish_list_former_node(state: AgentState):
 # dish list comparing tool
 def dish_list_comparer_node(state: AgentState):
     dishesToShow = list(set(state['dishesFromSearch']) - set(state['dishesSeen']))
-    print(dishesToShow)
+    return {"dishesToShow": dishesToShow}
+
+# dishes to show is greater than zero check
+def check_dishes_to_show(state: AgentState):
+    return len(state['dishesToShow']) > 0
 
 # builds workflow of graph from added nodes and edges
 builder = StateGraph(AgentState)
@@ -101,7 +105,9 @@ builder.add_node("list_comparer", dish_list_comparer_node)
 builder.add_edge("greeter", "dish_search")
 builder.add_edge("dish_search", "list_former")
 builder.add_edge("list_former", "list_comparer")
-builder.add_edge("list_comparer", END)
+
+# adds conditional edges
+builder.add_conditional_edges("list_comparer", check_dishes_to_show, {True: END, False: "dish_search"})
 
 # sets start of graph
 builder.set_entry_point("greeter")
