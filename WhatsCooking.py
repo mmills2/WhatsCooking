@@ -70,6 +70,15 @@ def dish_searcher_node(state: AgentState):
             dishSearchResults.append(searchResult['content'])
     return {"dishSearchResults": dishSearchResults}
 
+# dish list former agent
+def dish_list_former_node(state: AgentState):
+    dishResearch = "\n\n".join(state['dishSearchResults'])
+    response = model.with_structured_output(Dishes).invoke([
+        SystemMessage(content = DISH_LIST_FORMER_PROMPT),
+        HumanMessage(content = dishResearch)
+    ])
+    print(response)
+
 # builds workflow of graph from added nodes and edges
 builder = StateGraph(AgentState)
 
