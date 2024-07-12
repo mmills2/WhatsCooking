@@ -41,6 +41,10 @@ class Queries(BaseModel):
 class Dishes(BaseModel):
     dishesList: List[str]
 
+class UserDecision(BaseModel):
+    decision: str
+    foodDish: str
+
 # system prompts for agents
 GREETER_PROMPT = """You are a professional recipe recommender inquiring about what kind of recipe the user \
 would like to cook. Make sure to greet the user. You must ask what kind of food they are in the mood for. Tell \
@@ -56,12 +60,31 @@ food dish name. Make sure the food dish name you record is a name of an actual f
 in the dish name besides the name of the dish. Do not include the word recipe in the dish name. Capitalize the dish \
 names as if they were a title. Return a list of food dish names based on the information provided.""" 
 
+POST_LIST_DISPLAY_PROMPT = """You are a manager deciding what action to take based on a user message. The user will say \
+one of three things:
+1. They would like to learn more about a certain food dish
+2. They would like to see more food dishes
+3. They would like to change their food dish preferences
+Based on their message, decide which of these three options they would like to do. If they would like to learn more about \
+a dish but don't specify which one, ask them what dish they want to learn more about. If their message does not align with \
+any of these options, tell the user you do not understand their response and kindly ask to please choose one of the options. \
+Based on your decision, reply with one of these three options: 
+
+{'decision': "researchDish",
+'foodDish': <food dish name>}
+
+{'decision': "seeMore"}
+
+{'decision': "changePreference"}
+"""
+
 # greeter agent
 def greeter_node(state: AgentState):
     response = model.invoke([
         SystemMessage(content = GREETER_PROMPT)
     ])
     print(response.content)
+    print(POST_LIST_DISPLAY_PROMPT)
     userInput = input(": ")
     return {"preferences": userInput}
 
@@ -102,10 +125,12 @@ def check_dishes_to_show(state: AgentState):
 def show_dishes_node(state: AgentState):
     dishesToShow = state['dishesToShow']
     dishesSeen = state['dishesSeen'] or []
+    print("Here are some dishes:")
     for x in range(min(len(dishesToShow), state['maxRecommendations'])):
         dishesSeen.append(dishesToShow[0])
         print(dishesToShow[0])
         del dishesToShow[0]
+    userInput = input("Would you like to learn more about one of these dishes, see more dishes, or change your preferences?\n:")
     return {"dishesToShow": dishesToShow, "dishesSeen": dishesSeen}
 
 # builds workflow of graph from added nodes and edges
