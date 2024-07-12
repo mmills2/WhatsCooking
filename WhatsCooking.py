@@ -31,6 +31,7 @@ class AgentState(TypedDict):
     dishesSeen: List[str]
     dishesToShow: List[str]
     domainsVisited: List[str]
+    maxRecommendations: int
 
 # stores list of queries and provides structured output for generating queries
 class Queries(BaseModel):
@@ -53,7 +54,7 @@ about the types of food recipes to find. Generate a list of search queries to fi
 DISH_LIST_FORMER_PROMPT = """You are a documenter with the task of documenting food dishes. You must record the \
 food dish name. Make sure the food dish name you record is a name of an actual food. Do not include any information \
 in the dish name besides the name of the dish. Do not include the word recipe in the dish name. Capitalize the dish \
-names as if they were a title. Return a list of food dish names based on the information provided."""
+names as if they were a title. Return a list of food dish names based on the information provided.""" 
 
 # greeter agent
 def greeter_node(state: AgentState):
@@ -88,14 +89,24 @@ def dish_list_former_node(state: AgentState):
     ])
     return {"dishesFromSearch": dishes.dishesList}
 
-# dish list comparing tool
+# dish list comparing node
 def dish_list_comparer_node(state: AgentState):
-    dishesToShow = list(set(state['dishesFromSearch']) - set(state['dishesSeen']))
+    dishesToShow = list(set(state['dishesFromSearch']) - set(state['dishesSeen'] or []))
     return {"dishesToShow": dishesToShow}
 
 # dishes to show is greater than zero check
 def check_dishes_to_show(state: AgentState):
     return len(state['dishesToShow']) > 0
+
+# show dishes node
+def show_dishes_node(state: AgentState):
+    dishesToShow = state['dishesToShow']
+    dishesSeen = state['dishesSeen'] or []
+    for x in range(min(len(dishesToShow), state['maxRecommendations'])):
+        dishesSeen.append(dishesToShow[0])
+        print(dishesToShow[0])
+        del dishesToShow[0]
+    return {"dishesToShow": dishesToShow, "dishesSeen": dishesSeen}
 
 # builds workflow of graph from added nodes and edges
 builder = StateGraph(AgentState)
@@ -105,14 +116,16 @@ builder.add_node("greeter", greeter_node)
 builder.add_node("dish_search", dish_searcher_node)
 builder.add_node("list_former", dish_list_former_node)
 builder.add_node("list_comparer", dish_list_comparer_node)
+builder.add_node("show_dishes", show_dishes_node)
 
 # adds edges between nodes
 builder.add_edge("greeter", "dish_search")
 builder.add_edge("dish_search", "list_former")
 builder.add_edge("list_former", "list_comparer")
+builder.add_edge("show_dishes", END)
 
 # adds conditional edges
-builder.add_conditional_edges("list_comparer", check_dishes_to_show, {True: END, False: "dish_search"})
+builder.add_conditional_edges("list_comparer", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
 
 # sets start of graph
 builder.set_entry_point("greeter")
@@ -124,5 +137,5 @@ graph = builder.compile(checkpointer = memory)
 thread = {"configurable": {"thread_id": "1"}}
 
 # runs the application and prints out the AgentState after each node runs
-for event in graph.stream({"dishesSeen": []}, thread):
+for event in graph.stream({"maxRecommendations": 10}, thread):
     print(event)
