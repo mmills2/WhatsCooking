@@ -4,13 +4,15 @@ _ = load_dotenv()
 
 # necessary imports
 import os
+import operator
 from langgraph.graph import StateGraph, END
-from typing import TypedDict, List
+from typing import TypedDict, List, Annotated
 from langchain_core.messages import AnyMessage, SystemMessage, HumanMessage, AIMessage, ChatMessage
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.sqlite import SqliteSaver
 from tavily import TavilyClient
+from urllib.parse import urlparse
 
 # initializes OpenAI model
 model = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
@@ -28,6 +30,7 @@ class AgentState(TypedDict):
     dishesFromSearch: List[str]
     dishesSeen: List[str]
     dishesToShow: List[str]
+    domainsVisited: List[str]
 
 # stores list of queries and provides structured output for generating queries
 class Queries(BaseModel):
@@ -68,11 +71,13 @@ def dish_searcher_node(state: AgentState):
         HumanMessage(content = f"My food dish preferences are: {state['preferences']}")
     ])
     dishSearchResults = []
+    domainsVisited = state['domainsVisited'] or []
     for generatedQuery in generatedQueries.queriesList:
-        searchResults = tavily.search(query = generatedQuery, max_results = 3)
+        searchResults = tavily.search(query = generatedQuery, max_results = 1, exclude_domains = state['domainsVisited'])
         for searchResult in searchResults['results']:
+            domainsVisited.append(urlparse(searchResult['url']).netloc)
             dishSearchResults.append(searchResult['content'])
-    return {"dishSearchResults": dishSearchResults}
+    return {"dishSearchResults": dishSearchResults, "domainsVisited": domainsVisited}
 
 # dish list former agent
 def dish_list_former_node(state: AgentState):
@@ -119,5 +124,5 @@ graph = builder.compile(checkpointer = memory)
 thread = {"configurable": {"thread_id": "1"}}
 
 # runs the application and prints out the AgentState after each node runs
-for event in graph.stream({"dishesSeen": []}, thread):
+for event in graph.stream({"dishesSeen": ['Pasta with Pesto', 'Pesto Pasta']}, thread):
     print(event)
