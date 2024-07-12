@@ -73,7 +73,7 @@ def dish_searcher_node(state: AgentState):
     dishSearchResults = []
     domainsVisited = state['domainsVisited'] or []
     for generatedQuery in generatedQueries.queriesList:
-        searchResults = tavily.search(query = generatedQuery, max_results = 1, exclude_domains = state['domainsVisited'])
+        searchResults = tavily.search(query = generatedQuery, max_results = 3, exclude_domains = state['domainsVisited'])
         for searchResult in searchResults['results']:
             domainsVisited.append(urlparse(searchResult['url']).netloc)
             dishSearchResults.append(searchResult['content'])
@@ -124,5 +124,5 @@ graph = builder.compile(checkpointer = memory)
 thread = {"configurable": {"thread_id": "1"}}
 
 # runs the application and prints out the AgentState after each node runs
-for event in graph.stream({"dishesSeen": ['Pasta with Pesto', 'Pesto Pasta']}, thread):
+for event in graph.stream({"dishesSeen": []}, thread):
     print(event)
