@@ -64,10 +64,10 @@ in the dish name besides the name of the dish. Do not include the word recipe in
 names as if they were a title. Return a list of food dish names based on the information provided.""" 
 
 POST_LIST_DISPLAY_PROMPT = """You are a manager deciding what action to take based on a user message. The user will say \
-one of three things:
-1. They would like to learn more about a certain food dish
-2. They would like to see more food dishes
-3. They would like to change their food dish preferences
+something similar to one of three things:
+- They would like to learn more about a certain food dish
+- They would like to see more food dishes
+- They would like to change their food dish preferences
 Based on their message, decide which of these three options they would like to do. Based on your decision, reply with one \
 of these three options: 
 
@@ -78,7 +78,7 @@ of these three options:
 
 {'decision': "changePreference"}
 
-If they would like to learn more about a dish but don't specify which one, ask them what dish they want to learn more about. \
+If they would like to learn more about a dish but don't specify a food, ask them what dish they want to learn more about. \
 If their message does not align with any of these options, tell the user you do not understand their response and kindly ask to \
 please choose one of the options. In both of these cases, reply with:
 
@@ -117,15 +117,8 @@ def dish_list_former_node(state: AgentState):
         SystemMessage(content = DISH_LIST_FORMER_PROMPT),
         HumanMessage(content = dishesResearch)
     ])
-
     dishesToShow = list(set(dishes.dishesList) - set(state['dishesSeen'] or []))
-
     return {"dishesFromSearch": dishes.dishesList, "dishesToShow": dishesToShow}
-
-# dish list comparing node
-def dish_list_comparer_node(state: AgentState):
-    dishesToShow = list(set(state['dishesFromSearch']) - set(state['dishesSeen'] or []))
-    return {"dishesToShow": dishesToShow}
 
 # dishes to show is greater than zero check
 def check_dishes_to_show(state: AgentState):
@@ -134,12 +127,9 @@ def check_dishes_to_show(state: AgentState):
 # show dishes node
 def show_dishes_node(state: AgentState):
     dishesToShow = state['dishesToShow']
-    dishesSeen = state['dishesSeen'] or []
     print("Here are some dishes:")
     for x in range(min(len(dishesToShow), state['maxRecommendations'])):
-        dishesSeen.append(dishesToShow[0])
-        print(dishesToShow[0])
-        del dishesToShow[0]
+        print(dishesToShow[x])
 
     print("Would you like to learn more about one of these dishes, see more dishes, or change your preferences?")
     userDecision = UserDecision(decision = "insufficientResponse")
@@ -151,8 +141,7 @@ def show_dishes_node(state: AgentState):
             SystemMessage(content = POST_LIST_DISPLAY_PROMPT),
             HumanMessage(content = userInput)
         ])
-
-    return {"dishesToShow": dishesToShow, "dishesSeen": dishesSeen, "userDecision": userDecision}
+    return {"userDecision": userDecision}
 
 # builds workflow of graph from added nodes and edges
 builder = StateGraph(AgentState)
@@ -161,17 +150,15 @@ builder = StateGraph(AgentState)
 builder.add_node("greeter", greeter_node)
 builder.add_node("dish_search", dish_searcher_node)
 builder.add_node("list_former", dish_list_former_node)
-builder.add_node("list_comparer", dish_list_comparer_node)
 builder.add_node("show_dishes", show_dishes_node)
 
 # adds edges between nodes
 builder.add_edge("greeter", "dish_search")
 builder.add_edge("dish_search", "list_former")
-builder.add_edge("list_former", "list_comparer")
 builder.add_edge("show_dishes", END)
 
 # adds conditional edges
-builder.add_conditional_edges("list_comparer", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
+builder.add_conditional_edges("list_former", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
 
 # sets start of graph
 builder.set_entry_point("greeter")
