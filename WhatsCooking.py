@@ -91,7 +91,8 @@ please choose one of the options. In both of these cases, reply with:
 """
 
 RESEARCH_DISH_PROMPT = """You are a researcher with the task of researching a specific food dish. You must find a description and \
-recipe for the food dish. Generate a list of search queries to find this information on the given food dish. Only generate 2 queries."""
+recipe for the food dish. You may be given some preferences. Generate a list of search queries to find this information on the given \
+food dish. If you are given preferences, keep them in mind when gernerating the queries. Only generate 2 queries."""
 
 SHOW_DISH_PROMPT = """You are a proffesional writer for a cook book. You will be given information about a specific food dish. You \
 must write a 2-3 sentence description on the food dish. Then you must write a list of required ingredients. Then you must write step by step \
@@ -108,6 +109,19 @@ Instructions
 1. <step 1>
 2. <step 2>
 ...
+"""
+
+POST_SHOW_DISH_PROMPT = """You are a manager deciding what action to take based on a user message. Ask the user if they \
+would like to return to the list of dishes. Only accept definitive answers (no maybes or not sure or etc). If they give \
+an insufficient answer, kindly ask them to please choose yes or no and repeat the question. Reply with one of the following \
+outputs based on the user's answer:
+
+{'decision': "yes"}
+
+{'decision': "no"}
+
+{'decision': "insufficientResponse",
+'clarifyingRespone': <message to user>}
 """
 
 # greeter agent
@@ -184,7 +198,7 @@ def show_dishes_node(state: AgentState):
 def research_dish_node(state: AgentState):
     generatedQueries = model.with_structured_output(Queries).invoke([
         SystemMessage(content = RESEARCH_DISH_PROMPT),
-        HumanMessage(content = f"Food dish: {state['userDecision'].foodDish}")
+        HumanMessage(content = f"Food dish: {state['userDecision'].foodDish}\nPreferences: {state['preferences']}")
     ])
     dishResearchResults = []
     for generatedQuery in generatedQueries.queriesList:
@@ -196,11 +210,15 @@ def research_dish_node(state: AgentState):
 # show dish agent
 def show_dish_node(state: AgentState):
     dishResearch = "\n\n".join(state['dishResearchResults'])
-    response = model.invoke([
+
+    messages = [
         SystemMessage(content = SHOW_DISH_PROMPT),
         HumanMessage(content = dishResearch)
-    ])
-    print(response.content)
+    ]
+    response = ""
+    while(response != "yes" and response != "no")
+        response = model.invoke(messages)
+        print(response.content)
 
 # builds workflow of graph from added nodes and edges
 builder = StateGraph(AgentState)
