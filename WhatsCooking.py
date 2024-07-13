@@ -6,8 +6,8 @@ _ = load_dotenv()
 import os
 import operator
 from langgraph.graph import StateGraph, END
-from typing import TypedDict, List, Annotated
-from langchain_core.messages import AnyMessage, SystemMessage, HumanMessage, AIMessage, ChatMessage
+from typing import TypedDict, List, Optional
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.sqlite import SqliteSaver
@@ -23,15 +23,6 @@ memory = SqliteSaver.from_conn_string(":memory:")
 # initializes Tavily search engine tool
 tavily = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
 
-# stores inputs and outputs for nodes
-class AgentState(TypedDict):
-    preferences: str
-    dishSearchResults: List[str]
-    dishesFromSearch: List[str]
-    dishesSeen: List[str]
-    dishesToShow: List[str]
-    domainsVisited: List[str]
-
 # stores list of queries and provides structured output for generating queries
 class Queries(BaseModel):
     queriesList: List[str]
@@ -40,11 +31,31 @@ class Queries(BaseModel):
 class Dishes(BaseModel):
     dishesList: List[str]
 
+# store user's decision after being shown food dishes
+class UserDecision(BaseModel):
+    decision: str
+    foodDish: Optional[str]
+    clarifyingRespone: Optional[str]
+
+# stores inputs and outputs for nodes
+class AgentState(TypedDict):
+    preferences: str
+    dishSearchResults: List[str]
+    dishesFromSearch: List[str]
+    dishesSeen: List[str]
+    dishesToShow: List[str]
+    domainsVisited: List[str]
+    maxRecommendations: int
+    userDecision: UserDecision
+
 # system prompts for agents
 GREETER_PROMPT = """You are a professional recipe recommender inquiring about what kind of recipe the user \
 would like to cook. Make sure to greet the user. You must ask what kind of food they are in the mood for. Tell \
-the user if they do not know what they are in the mood for that is ok. Ask if the user has any other preferences. \
-Don't say anything after asking for preferences."""
+the user if they do not know what they are in the mood for that is ok. Ask if the user has any other preferences \
+and give some examples of types of preferences. Don't say anything after asking for preferences. If the user gives preferences, \
+make sure they are food related. If the preferences are food related or they have no preferences, respond with just \
+the word "valid". If the preferences are not food related, tell the user sorry and kindly say you can only accept food \
+related preferences."""
 
 DISH_SEARCH_PROMPT = """You are a researcher with the task of finding food recipes. You may be given preferences \
 about the types of food recipes to find. Generate a list of search queries to find relevant food recipes. Only generate \
@@ -53,15 +64,45 @@ about the types of food recipes to find. Generate a list of search queries to fi
 DISH_LIST_FORMER_PROMPT = """You are a documenter with the task of documenting food dishes. You must record the \
 food dish name. Make sure the food dish name you record is a name of an actual food. Do not include any information \
 in the dish name besides the name of the dish. Do not include the word recipe in the dish name. Capitalize the dish \
-names as if they were a title. Return a list of food dish names based on the information provided."""
+names as if they were a title. Return a list of food dish names based on the information provided.""" 
+
+POST_LIST_DISPLAY_PROMPT = """You are a manager deciding what action to take based on a user message. The user will say \
+something similar to one of three things:
+- They would like to learn more about a certain food dish
+- They would like to see more food dishes
+- They would like to change their food dish preferences
+Based on their message, decide which of these three options they would like to do. Based on your decision, reply with one \
+of these three options: 
+
+{'decision': "researchDish",
+'foodDish': <food dish name>}
+
+{'decision': "seeMore"}
+
+{'decision': "changePreference"}
+
+If they would like to learn more about a dish but don't specify a food, ask them what dish they want to learn more about. \
+If their message does not align with any of these options, tell the user you do not understand their response and kindly ask to \
+please choose one of the options. In both of these cases, reply with:
+
+{'decision': "insufficientResponse",
+'clarifyingRespone': <message to user>}
+"""
 
 # greeter agent
 def greeter_node(state: AgentState):
-    response = model.invoke([
-        SystemMessage(content = GREETER_PROMPT)
-    ])
-    print(response.content)
-    userInput = input(": ")
+
+    messages = [SystemMessage(content = GREETER_PROMPT)]
+    aiResponse = ""
+    userInput = ""
+    while(aiResponse != "valid"):
+        response = model.invoke(messages)
+        aiResponse = response.content
+        if(aiResponse != "valid"):
+            print(aiResponse)
+            messages.append(AIMessage(content = aiResponse))
+            userInput = input(": ")
+            messages.append(HumanMessage(content = userInput))
     return {"preferences": userInput}
 
 # dish searcher agent
@@ -86,16 +127,37 @@ def dish_list_former_node(state: AgentState):
         SystemMessage(content = DISH_LIST_FORMER_PROMPT),
         HumanMessage(content = dishesResearch)
     ])
-    return {"dishesFromSearch": dishes.dishesList}
-
-# dish list comparing tool
-def dish_list_comparer_node(state: AgentState):
-    dishesToShow = list(set(state['dishesFromSearch']) - set(state['dishesSeen']))
-    return {"dishesToShow": dishesToShow}
+    dishesToShow = list(set(dishes.dishesList) - set(state['dishesSeen'] or []))
+    return {"dishesFromSearch": dishes.dishesList, "dishesToShow": dishesToShow}
 
 # dishes to show is greater than zero check
 def check_dishes_to_show(state: AgentState):
     return len(state['dishesToShow']) > 0
+
+# show dishes node
+def show_dishes_node(state: AgentState):
+    dishesToShow = state['dishesToShow']
+    print("Here are some dishes:")
+    for x in range(min(len(dishesToShow), state['maxRecommendations'])):
+        print(dishesToShow[x])
+
+    questionToUser = "Would you like to learn more about one of these dishes, see more dishes, or change your preferences?"
+    print(questionToUser)
+
+    messages = [
+        SystemMessage(content = POST_LIST_DISPLAY_PROMPT),
+        AIMessage(content = questionToUser)
+    ]
+
+    userDecision = UserDecision(decision = "insufficientResponse")
+    while(userDecision.decision == "insufficientResponse"):
+        if(userDecision.clarifyingRespone):
+            print(userDecision.clarifyingRespone)
+            messages.append(AIMessage(content = userDecision.clarifyingRespone))
+        userInput = input(": ")
+        messages.append(HumanMessage(content = userInput))
+        userDecision = model.with_structured_output(UserDecision).invoke(messages)
+    return {"userDecision": userDecision}
 
 # builds workflow of graph from added nodes and edges
 builder = StateGraph(AgentState)
@@ -104,15 +166,15 @@ builder = StateGraph(AgentState)
 builder.add_node("greeter", greeter_node)
 builder.add_node("dish_search", dish_searcher_node)
 builder.add_node("list_former", dish_list_former_node)
-builder.add_node("list_comparer", dish_list_comparer_node)
+builder.add_node("show_dishes", show_dishes_node)
 
 # adds edges between nodes
 builder.add_edge("greeter", "dish_search")
 builder.add_edge("dish_search", "list_former")
-builder.add_edge("list_former", "list_comparer")
+builder.add_edge("show_dishes", END)
 
 # adds conditional edges
-builder.add_conditional_edges("list_comparer", check_dishes_to_show, {True: END, False: "dish_search"})
+builder.add_conditional_edges("list_former", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
 
 # sets start of graph
 builder.set_entry_point("greeter")
@@ -124,5 +186,5 @@ graph = builder.compile(checkpointer = memory)
 thread = {"configurable": {"thread_id": "1"}}
 
 # runs the application and prints out the AgentState after each node runs
-for event in graph.stream({"dishesSeen": []}, thread):
+for event in graph.stream({"maxRecommendations": 10}, thread):
     print(event)
