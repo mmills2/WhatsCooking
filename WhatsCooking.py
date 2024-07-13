@@ -98,7 +98,7 @@ SHOW_DISH_PROMPT = """You are a proffesional writer for a cook book. You will be
 must write a 2-3 sentence description on the food dish. Then you must write a list of required ingredients. Then you must write step by step \
 instructions on how to make the food dish. Don't say anything after the instructions. Use the below format for your output.
 
-<food description>
+<2-3 sentence food description>
 
 Ingredients:
 - <ingredient 1>
@@ -194,6 +194,10 @@ def show_dishes_node(state: AgentState):
         userDecision = model.with_structured_output(UserDecision).invoke(messages)
     return {"userDecision": userDecision}
 
+# checks if user wants to learn more about a dish, see more dishes, or change their preferences
+def check_post_show_dishes_decision(state: AgentState):
+    return state['userDecision'].decision
+
 # research dish agent
 def research_dish_node(state: AgentState):
     generatedQueries = model.with_structured_output(Queries).invoke([
@@ -207,12 +211,14 @@ def research_dish_node(state: AgentState):
             dishResearchResults.append(searchResult['content'])
     return {"dishResearchResults": dishResearchResults}
 
-# get more dishes node
-def get_more_dishes_node(state: AgentState):
+# adjust dish lists node
+def adjust_dish_lists_node(state: AgentState):
     dishesToShow = state['dishesToShow']
     dishesSeen = state['dishesSeen'] or []
-    dishesSeen = dishesSeen + dishesToShow
-    print(dishesSeen)
+    dishesSeen = dishesSeen + dishesToShow[:min(len(dishesToShow), state['maxRecommendations'])]
+    for i in range(min(len(dishesToShow), state['maxRecommendations'])):
+        del dishesToShow[0]
+    return {"dishesToShow": dishesToShow, "dishesSeen": dishesSeen}
 
 # show dish agent
 def show_dish_node(state: AgentState):
@@ -256,18 +262,19 @@ builder.add_node("dish_search", dish_searcher_node)
 builder.add_node("list_former", dish_list_former_node)
 builder.add_node("show_dishes", show_dishes_node)
 builder.add_node("research_dish", research_dish_node)
+builder.add_node("more_dishes", adjust_dish_lists_node)
 builder.add_node("show_dish", show_dish_node)
 builder.add_node("post_show_dish", post_show_dish_node)
 
 # adds edges between nodes
 builder.add_edge("greeter", "dish_search")
 builder.add_edge("dish_search", "list_former")
-builder.add_edge("show_dishes", "research_dish")
 builder.add_edge("research_dish", "show_dish")
 builder.add_edge("show_dish", "post_show_dish")
 
 # adds conditional edges
 builder.add_conditional_edges("list_former", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
+builder.add_conditional_edges("show_dishes", check_post_show_dishes_decision, {"researchDish": "research_dish", "seeMore": "more_dishes"})
 builder.add_conditional_edges("post_show_dish", check_post_show_dish_decision, {"yes": "show_dishes", "no": END})
 
 # sets start of graph
