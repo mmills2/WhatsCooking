@@ -7,7 +7,7 @@ import os
 import operator
 from langgraph.graph import StateGraph, END
 from typing import TypedDict, List, Optional
-from langchain_core.messages import AnyMessage, SystemMessage, HumanMessage, AIMessage, ChatMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.sqlite import SqliteSaver
@@ -131,16 +131,23 @@ def show_dishes_node(state: AgentState):
     for x in range(min(len(dishesToShow), state['maxRecommendations'])):
         print(dishesToShow[x])
 
-    print("Would you like to learn more about one of these dishes, see more dishes, or change your preferences?")
+    questionToUser = "Would you like to learn more about one of these dishes, see more dishes, or change your preferences?"
+    print(questionToUser)
+
+    messages = [
+        SystemMessage(content = POST_LIST_DISPLAY_PROMPT),
+        AIMessage(content = questionToUser)
+    ]
+
     userDecision = UserDecision(decision = "insufficientResponse")
     while(userDecision.decision == "insufficientResponse"):
         if(userDecision.clarifyingRespone):
             print(userDecision.clarifyingRespone)
+            messages.append(AIMessage(content = userDecision.clarifyingRespone))
         userInput = input(": ")
-        userDecision = model.with_structured_output(UserDecision).invoke([
-            SystemMessage(content = POST_LIST_DISPLAY_PROMPT),
-            HumanMessage(content = userInput)
-        ])
+        messages.append(HumanMessage(content = userInput))
+        userDecision = model.with_structured_output(UserDecision).invoke(messages)
+        print(messages)
     return {"userDecision": userDecision}
 
 # builds workflow of graph from added nodes and edges
