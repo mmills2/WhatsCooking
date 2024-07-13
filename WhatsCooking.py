@@ -236,6 +236,10 @@ def post_show_dish_node(state: AgentState):
         userDecision = model.with_structured_output(UserDecision).invoke(messages)
     return {"userDecision": userDecision}
 
+# checks if user wants to return to dishes after view a specific dish
+def check_post_show_dish_decision(state: AgentState):
+    return state['userDecision'].decision
+
 # builds workflow of graph from added nodes and edges
 builder = StateGraph(AgentState)
 
@@ -254,10 +258,10 @@ builder.add_edge("dish_search", "list_former")
 builder.add_edge("show_dishes", "research_dish")
 builder.add_edge("research_dish", "show_dish")
 builder.add_edge("show_dish", "post_show_dish")
-builder.add_edge("post_show_dish", END)
 
 # adds conditional edges
 builder.add_conditional_edges("list_former", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
+builder.add_conditional_edges("post_show_dish", check_post_show_dish_decision, {"yes": "show_dishes", "no": END})
 
 # sets start of graph
 builder.set_entry_point("greeter")
