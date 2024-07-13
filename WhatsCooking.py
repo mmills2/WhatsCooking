@@ -47,6 +47,7 @@ class AgentState(TypedDict):
     domainsVisited: List[str]
     maxRecommendations: int
     userDecision: UserDecision
+    dishResearchResults: List[str]
 
 # system prompts for agents
 GREETER_PROMPT = """You are a professional recipe recommender inquiring about what kind of recipe the user \
@@ -89,6 +90,9 @@ please choose one of the options. In both of these cases, reply with:
 'clarifyingRespone': <message to user>}
 """
 
+RESEARCH_DISH_PROMPT = """You are a researcher with the task of researching a specific food dish. You must find a description and \
+recipe for the food dish. Generate a list of search queries to find this information on the given food dish. Only generate 2 queries."""
+
 # greeter agent
 def greeter_node(state: AgentState):
 
@@ -114,7 +118,7 @@ def dish_searcher_node(state: AgentState):
     dishSearchResults = []
     domainsVisited = state['domainsVisited'] or []
     for generatedQuery in generatedQueries.queriesList:
-        searchResults = tavily.search(query = generatedQuery, max_results = 3, exclude_domains = state['domainsVisited'])
+        searchResults = tavily.search(query = generatedQuery, max_results = 1, exclude_domains = state['domainsVisited'])
         for searchResult in searchResults['results']:
             domainsVisited.append(urlparse(searchResult['url']).netloc)
             dishSearchResults.append(searchResult['content'])
@@ -159,6 +163,19 @@ def show_dishes_node(state: AgentState):
         userDecision = model.with_structured_output(UserDecision).invoke(messages)
     return {"userDecision": userDecision}
 
+# research dish agent
+def research_dish_node(state: AgentState):
+    generatedQueries = model.with_structured_output(Queries).invoke([
+        SystemMessage(content = RESEARCH_DISH_PROMPT),
+        HumanMessage(content = f"Food dish: {state['userDecision'].foodDish}")
+    ])
+    dishResearchResults = []
+    for generatedQuery in generatedQueries.queriesList:
+        searchResults = tavily.search(query = generatedQuery, max_results = 3)
+        for searchResult in searchResults['results']:
+            dishResearchResults.append(searchResult['content'])
+    return {"dishResearchResults": dishResearchResults}
+
 # builds workflow of graph from added nodes and edges
 builder = StateGraph(AgentState)
 
@@ -167,11 +184,13 @@ builder.add_node("greeter", greeter_node)
 builder.add_node("dish_search", dish_searcher_node)
 builder.add_node("list_former", dish_list_former_node)
 builder.add_node("show_dishes", show_dishes_node)
+builder.add_node("research_dish", research_dish_node)
 
 # adds edges between nodes
 builder.add_edge("greeter", "dish_search")
 builder.add_edge("dish_search", "list_former")
-builder.add_edge("show_dishes", END)
+builder.add_edge("show_dishes", "research_dish")
+builder.add_edge("research_dish", END)
 
 # adds conditional edges
 builder.add_conditional_edges("list_former", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
