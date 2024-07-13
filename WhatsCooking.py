@@ -6,7 +6,7 @@ _ = load_dotenv()
 import os
 import operator
 from langgraph.graph import StateGraph, END
-from typing import TypedDict, List, Annotated
+from typing import TypedDict, List, Optional
 from langchain_core.messages import AnyMessage, SystemMessage, HumanMessage, AIMessage, ChatMessage
 from langchain_core.pydantic_v1 import BaseModel
 from langchain_openai import ChatOpenAI
@@ -23,6 +23,20 @@ memory = SqliteSaver.from_conn_string(":memory:")
 # initializes Tavily search engine tool
 tavily = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
 
+# stores list of queries and provides structured output for generating queries
+class Queries(BaseModel):
+    queriesList: List[str]
+
+# stores list of dishes and provides structured output for forming list
+class Dishes(BaseModel):
+    dishesList: List[str]
+
+# store user's decision after being shown food dishes
+class UserDecision(BaseModel):
+    decision: str
+    foodDish: Optional[str]
+    clarifyingRespone: Optional[str]
+
 # stores inputs and outputs for nodes
 class AgentState(TypedDict):
     preferences: str
@@ -32,18 +46,7 @@ class AgentState(TypedDict):
     dishesToShow: List[str]
     domainsVisited: List[str]
     maxRecommendations: int
-
-# stores list of queries and provides structured output for generating queries
-class Queries(BaseModel):
-    queriesList: List[str]
-
-# stores list of dishes and provides structured output for forming list
-class Dishes(BaseModel):
-    dishesList: List[str]
-
-class UserDecision(BaseModel):
-    decision: str
-    foodDish: str
+    userDecision: UserDecision
 
 # system prompts for agents
 GREETER_PROMPT = """You are a professional recipe recommender inquiring about what kind of recipe the user \
@@ -65,10 +68,8 @@ one of three things:
 1. They would like to learn more about a certain food dish
 2. They would like to see more food dishes
 3. They would like to change their food dish preferences
-Based on their message, decide which of these three options they would like to do. If they would like to learn more about \
-a dish but don't specify which one, ask them what dish they want to learn more about. If their message does not align with \
-any of these options, tell the user you do not understand their response and kindly ask to please choose one of the options. \
-Based on your decision, reply with one of these three options: 
+Based on their message, decide which of these three options they would like to do. Based on your decision, reply with one \
+of these three options: 
 
 {'decision': "researchDish",
 'foodDish': <food dish name>}
@@ -76,6 +77,13 @@ Based on your decision, reply with one of these three options:
 {'decision': "seeMore"}
 
 {'decision': "changePreference"}
+
+If they would like to learn more about a dish but don't specify which one, ask them what dish they want to learn more about. \
+If their message does not align with any of these options, tell the user you do not understand their response and kindly ask to \
+please choose one of the options. In both of these cases, reply with:
+
+{'decision': "insufficientResponse",
+'clarifyingRespone': <message to user>}
 """
 
 # greeter agent
@@ -84,7 +92,6 @@ def greeter_node(state: AgentState):
         SystemMessage(content = GREETER_PROMPT)
     ])
     print(response.content)
-    print(POST_LIST_DISPLAY_PROMPT)
     userInput = input(": ")
     return {"preferences": userInput}
 
@@ -110,7 +117,10 @@ def dish_list_former_node(state: AgentState):
         SystemMessage(content = DISH_LIST_FORMER_PROMPT),
         HumanMessage(content = dishesResearch)
     ])
-    return {"dishesFromSearch": dishes.dishesList}
+
+    dishesToShow = list(set(dishes.dishesList) - set(state['dishesSeen'] or []))
+
+    return {"dishesFromSearch": dishes.dishesList, "dishesToShow": dishesToShow}
 
 # dish list comparing node
 def dish_list_comparer_node(state: AgentState):
@@ -130,8 +140,19 @@ def show_dishes_node(state: AgentState):
         dishesSeen.append(dishesToShow[0])
         print(dishesToShow[0])
         del dishesToShow[0]
-    userInput = input("Would you like to learn more about one of these dishes, see more dishes, or change your preferences?\n:")
-    return {"dishesToShow": dishesToShow, "dishesSeen": dishesSeen}
+
+    print("Would you like to learn more about one of these dishes, see more dishes, or change your preferences?")
+    userDecision = UserDecision(decision = "insufficientResponse")
+    while(userDecision.decision == "insufficientResponse"):
+        if(userDecision.clarifyingRespone):
+            print(userDecision.clarifyingRespone)
+        userInput = input(": ")
+        userDecision = model.with_structured_output(UserDecision).invoke([
+            SystemMessage(content = POST_LIST_DISPLAY_PROMPT),
+            HumanMessage(content = userInput)
+        ])
+
+    return {"dishesToShow": dishesToShow, "dishesSeen": dishesSeen, "userDecision": userDecision}
 
 # builds workflow of graph from added nodes and edges
 builder = StateGraph(AgentState)
