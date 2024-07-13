@@ -89,6 +89,9 @@ please choose one of the options. In both of these cases, reply with:
 'clarifyingRespone': <message to user>}
 """
 
+RESEARCH_DISH_PROMPT = """You are a researcher with the task of researching a specific food dish. You must find a description and \
+recipe for the food dish. Generate a list of search queries to find this information on the given food dish."""
+
 # greeter agent
 def greeter_node(state: AgentState):
 
