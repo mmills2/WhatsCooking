@@ -93,6 +93,9 @@ please choose one of the options. In both of these cases, reply with:
 RESEARCH_DISH_PROMPT = """You are a researcher with the task of researching a specific food dish. You must find a description and \
 recipe for the food dish. Generate a list of search queries to find this information on the given food dish. Only generate 2 queries."""
 
+SHOW_DISH_PROMPT = """You are a proffesional writer for a cook book. You will be given information about a specific food dish. You \
+must write a short description on the food dish. Then you must write step by step instructions on how to make the food dish."""
+
 # greeter agent
 def greeter_node(state: AgentState):
 
