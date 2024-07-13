@@ -207,6 +207,13 @@ def research_dish_node(state: AgentState):
             dishResearchResults.append(searchResult['content'])
     return {"dishResearchResults": dishResearchResults}
 
+# get more dishes node
+def get_more_dishes_node(state: AgentState):
+    dishesToShow = state['dishesToShow']
+    dishesSeen = state['dishesSeen'] or []
+    dishesSeen = dishesSeen + dishesToShow
+    print(dishesSeen)
+
 # show dish agent
 def show_dish_node(state: AgentState):
     dishResearch = "\n\n".join(state['dishResearchResults'])
