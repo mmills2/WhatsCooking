@@ -51,8 +51,11 @@ class AgentState(TypedDict):
 # system prompts for agents
 GREETER_PROMPT = """You are a professional recipe recommender inquiring about what kind of recipe the user \
 would like to cook. Make sure to greet the user. You must ask what kind of food they are in the mood for. Tell \
-the user if they do not know what they are in the mood for that is ok. Ask if the user has any other preferences. \
-Don't say anything after asking for preferences."""
+the user if they do not know what they are in the mood for that is ok. Ask if the user has any other preferences \
+and give some examples of types of preferences. Don't say anything after asking for preferences. If the user gives preferences, \
+make sure they are food related. If the preferences are food related or they have no preferences, respond with just \
+the word "valid". If the preferences are not food related, tell the user sorry and kindly say you can only accept food \
+related preferences."""
 
 DISH_SEARCH_PROMPT = """You are a researcher with the task of finding food recipes. You may be given preferences \
 about the types of food recipes to find. Generate a list of search queries to find relevant food recipes. Only generate \
@@ -88,11 +91,18 @@ please choose one of the options. In both of these cases, reply with:
 
 # greeter agent
 def greeter_node(state: AgentState):
-    response = model.invoke([
-        SystemMessage(content = GREETER_PROMPT)
-    ])
-    print(response.content)
-    userInput = input(": ")
+
+    messages = [SystemMessage(content = GREETER_PROMPT)]
+    aiResponse = ""
+    userInput = ""
+    while(aiResponse != "valid"):
+        response = model.invoke(messages)
+        aiResponse = response.content
+        if(aiResponse != "valid"):
+            print(aiResponse)
+            messages.append(AIMessage(content = aiResponse))
+            userInput = input(": ")
+            messages.append(HumanMessage(content = userInput))
     return {"preferences": userInput}
 
 # dish searcher agent
@@ -147,7 +157,6 @@ def show_dishes_node(state: AgentState):
         userInput = input(": ")
         messages.append(HumanMessage(content = userInput))
         userDecision = model.with_structured_output(UserDecision).invoke(messages)
-        print(messages)
     return {"userDecision": userDecision}
 
 # builds workflow of graph from added nodes and edges
