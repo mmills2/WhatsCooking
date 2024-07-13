@@ -210,15 +210,31 @@ def research_dish_node(state: AgentState):
 # show dish agent
 def show_dish_node(state: AgentState):
     dishResearch = "\n\n".join(state['dishResearchResults'])
+    response = model.invoke([
+        SystemMessage(content = SHOW_DISH_PROMPT),
+        HumanMessage(content = dishResearch)])
+    print(response.content)
+
+# post show dish agent
+def post_show_dish_node(state: AgentState):
+
+    questionToUser = "Would you like to return to the list of dishes?"
+    print(questionToUser)
 
     messages = [
-        SystemMessage(content = SHOW_DISH_PROMPT),
-        HumanMessage(content = dishResearch)
+        SystemMessage(content = POST_SHOW_DISH_PROMPT),
+        AIMessage(content = questionToUser)
     ]
-    response = ""
-    while(response != "yes" and response != "no")
-        response = model.invoke(messages)
-        print(response.content)
+
+    userDecision = UserDecision(decision = "insufficientResponse")
+    while(userDecision.decision == "insufficientResponse"):
+        if(userDecision.clarifyingRespone):
+            print(userDecision.clarifyingRespone)
+            messages.append(AIMessage(content = userDecision.clarifyingRespone))
+        userInput = input(": ")
+        messages.append(HumanMessage(content = userInput))
+        userDecision = model.with_structured_output(UserDecision).invoke(messages)
+    return {"userDecision": userDecision}
 
 # builds workflow of graph from added nodes and edges
 builder = StateGraph(AgentState)
@@ -230,13 +246,15 @@ builder.add_node("list_former", dish_list_former_node)
 builder.add_node("show_dishes", show_dishes_node)
 builder.add_node("research_dish", research_dish_node)
 builder.add_node("show_dish", show_dish_node)
+builder.add_node("post_show_dish", post_show_dish_node)
 
 # adds edges between nodes
 builder.add_edge("greeter", "dish_search")
 builder.add_edge("dish_search", "list_former")
 builder.add_edge("show_dishes", "research_dish")
 builder.add_edge("research_dish", "show_dish")
-builder.add_edge("show_dish", END)
+builder.add_edge("show_dish", "post_show_dish")
+builder.add_edge("post_show_dish", END)
 
 # adds conditional edges
 builder.add_conditional_edges("list_former", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
