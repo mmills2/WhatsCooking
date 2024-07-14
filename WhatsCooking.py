@@ -63,9 +63,10 @@ about the types of food recipes to find. Generate a list of search queries to fi
 1 query."""
 
 DISH_LIST_FORMER_PROMPT = """You are a documenter with the task of documenting food dishes. You must record the \
-food dish name. Make sure the food dish name you record is a name of an actual food. Do not include any information \
-in the dish name besides the name of the dish. Do not include the word recipe in the dish name. Capitalize the dish \
-names as if they were a title. Return a list of food dish names based on the information provided.""" 
+food dish name. Make sure the food dish name you record is a name of an actual food. You may be given preferences. \
+If you are given prefernces, only record the food dish name if the food dish aligns with the given prefences. Do not \
+include any information in the dish name besides the name of the dish. Do not include the word recipe in the dish name. \
+Capitalize the dish names as if they were a title. Return a list of food dish names based on the information provided.""" 
 
 POST_LIST_DISPLAY_PROMPT = """You are a manager deciding what action to take based on a user message. The user will say \
 something similar to one of three things:
@@ -160,7 +161,7 @@ def dish_list_former_node(state: AgentState):
     dishesResearch = "\n\n".join(state['dishSearchResults'])
     dishes = model.with_structured_output(Dishes).invoke([
         SystemMessage(content = DISH_LIST_FORMER_PROMPT),
-        HumanMessage(content = dishesResearch)
+        HumanMessage(content = f"Food dish prefences: {state['preferences']}\n{dishesResearch}")
     ])
     dishesToShow = list(set(dishes.dishesList) - set(state['dishesSeen'] or []))
     return {"dishesFromSearch": dishes.dishesList, "dishesToShow": dishesToShow}
@@ -276,6 +277,7 @@ builder.add_edge("show_dish", "post_show_dish")
 builder.add_conditional_edges("list_former", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
 builder.add_conditional_edges("show_dishes", check_post_show_dishes_decision, {"researchDish": "research_dish", "seeMore": "more_dishes"})
 builder.add_conditional_edges("post_show_dish", check_post_show_dish_decision, {"yes": "show_dishes", "no": END})
+builder.add_conditional_edges("more_dishes", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
 
 # sets start of graph
 builder.set_entry_point("greeter")
