@@ -91,9 +91,16 @@ please choose one of the options. In both of these cases, reply with:
 'clarifyingRespone': <message to user>}
 """
 
-RESEARCH_DISH_PROMPT = """You are a researcher with the task of researching a specific food dish. You must find a description and \
-recipe for the food dish. You may be given some preferences. Generate a list of search queries to find this information on the given \
-food dish. If you are given preferences, keep them in mind when gernerating the queries. Only generate 2 queries."""
+RESEARCH_DISH_PROMPT = """You are a researcher with the task of researching a specific food dish. You must find a \
+description and recipe for the food dish. You may be given some preferences. Generate a list of search queries to find \
+this information on the given food dish. If you are given preferences, keep them in mind when gernerating the queries. \
+Only generate 2 queries."""
+
+CHANGE_PREFERENCS_PROMPT = """You are a research assistant questioning a person for a study. Ask what their new food \
+preferences are and give some examples of types of preferences. Don't say anything after asking for preferences. If the \
+person gives preferences, make sure they are food related. If the preferences are food related or they have no preferences, \
+respond with just the word "valid". If the preferences are not food related, tell the person sorry and kindly say you can \
+only accept food related preferences."""
 
 SHOW_DISH_PROMPT = """You are a proffesional writer for a cook book. You will be given information about a specific food dish. You \
 must write a 2-3 sentence description on the food dish. Then you must write a list of required ingredients. Then you must write step by step \
