@@ -91,9 +91,16 @@ please choose one of the options. In both of these cases, reply with:
 'clarifyingRespone': <message to user>}
 """
 
-RESEARCH_DISH_PROMPT = """You are a researcher with the task of researching a specific food dish. You must find a description and \
-recipe for the food dish. You may be given some preferences. Generate a list of search queries to find this information on the given \
-food dish. If you are given preferences, keep them in mind when gernerating the queries. Only generate 2 queries."""
+RESEARCH_DISH_PROMPT = """You are a researcher with the task of researching a specific food dish. You must find a \
+description and recipe for the food dish. You may be given some preferences. Generate a list of search queries to find \
+this information on the given food dish. If you are given preferences, keep them in mind when gernerating the queries. \
+Only generate 2 queries."""
+
+CHANGE_PREFERENCS_PROMPT = """You are a professional recipe recommender inquiring about what kind of recipe the user \
+would like to cook. Ask what their new food preferences are. Don't say anything after asking for preferences. If the \
+person gives preferences, make sure they are food related. If the preferences are food related or they have no preferences, \
+respond with just the word "valid". If the preferences are not food related, tell the person sorry and kindly say you can \
+only accept food related preferences."""
 
 SHOW_DISH_PROMPT = """You are a proffesional writer for a cook book. You will be given information about a specific food dish. You \
 must write a 2-3 sentence description on the food dish. Then you must write a list of required ingredients. Then you must write step by step \
@@ -173,11 +180,11 @@ def check_dishes_to_show(state: AgentState):
 # show dishes node
 def show_dishes_node(state: AgentState):
     dishesToShow = state['dishesToShow']
-    print("Here are some dishes:")
+    print("\nHere are some dishes:")
     for x in range(min(len(dishesToShow), state['maxRecommendations'])):
-        print(dishesToShow[x])
+        print(" " + dishesToShow[x])
 
-    questionToUser = "Would you like to learn more about one of these dishes, see more dishes, or change your preferences?"
+    questionToUser = "\nWould you like to learn more about one of these dishes, see more dishes, or change your preferences?"
     print(questionToUser)
 
     messages = [
@@ -221,18 +228,36 @@ def adjust_dish_lists_node(state: AgentState):
         del dishesToShow[0]
     return {"dishesToShow": dishesToShow, "dishesSeen": dishesSeen}
 
+# change preferences agent
+def change_preferences_node(state: AgentState):
+    messages = [SystemMessage(content = CHANGE_PREFERENCS_PROMPT)]
+    aiResponse = ""
+    userInput = ""
+    print()
+    while(aiResponse != "valid"):
+        response = model.invoke(messages)
+        aiResponse = response.content
+        if(aiResponse != "valid"):
+            print(aiResponse)
+            messages.append(AIMessage(content = aiResponse))
+            userInput = input(": ")
+            messages.append(HumanMessage(content = userInput))
+    dishesSeen = []
+    domainsVisited = []
+    return {"preferences": userInput, "dishesSeen": dishesSeen, "domainsVisited": domainsVisited}
+
 # show dish agent
 def show_dish_node(state: AgentState):
     dishResearch = "\n\n".join(state['dishResearchResults'])
     response = model.invoke([
         SystemMessage(content = SHOW_DISH_PROMPT),
         HumanMessage(content = dishResearch)])
-    print(response.content)
+    print("\n" + response.content)
 
 # post show dish agent
 def post_show_dish_node(state: AgentState):
 
-    questionToUser = "Would you like to return to the list of dishes?"
+    questionToUser = "\nWould you like to return to the list of dishes?"
     print(questionToUser)
 
     messages = [
@@ -264,6 +289,7 @@ builder.add_node("list_former", dish_list_former_node)
 builder.add_node("show_dishes", show_dishes_node)
 builder.add_node("research_dish", research_dish_node)
 builder.add_node("more_dishes", adjust_dish_lists_node)
+builder.add_node("change_preferences", change_preferences_node)
 builder.add_node("show_dish", show_dish_node)
 builder.add_node("post_show_dish", post_show_dish_node)
 
@@ -272,10 +298,11 @@ builder.add_edge("greeter", "dish_search")
 builder.add_edge("dish_search", "list_former")
 builder.add_edge("research_dish", "show_dish")
 builder.add_edge("show_dish", "post_show_dish")
+builder.add_edge("change_preferences", "dish_search")
 
 # adds conditional edges
 builder.add_conditional_edges("list_former", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
-builder.add_conditional_edges("show_dishes", check_post_show_dishes_decision, {"researchDish": "research_dish", "seeMore": "more_dishes"})
+builder.add_conditional_edges("show_dishes", check_post_show_dishes_decision, {"researchDish": "research_dish", "seeMore": "more_dishes", "changePreference": "change_preferences"})
 builder.add_conditional_edges("post_show_dish", check_post_show_dish_decision, {"yes": "show_dishes", "no": END})
 builder.add_conditional_edges("more_dishes", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
 
@@ -285,9 +312,9 @@ builder.set_entry_point("greeter")
 # compiles graph so application can be run
 graph = builder.compile(checkpointer = memory)
 
-# stores history of graph states
-thread = {"configurable": {"thread_id": "1"}}
+config = {"recursion_limit": 100, "configurable": {"thread_id": "1"}}
 
 # runs the application and prints out the AgentState after each node runs
-for event in graph.stream({"maxRecommendations": 10}, thread):
-    print(event)
+for event in graph.stream({"maxRecommendations": 10}, config):
+    # print(event)
+    pass
