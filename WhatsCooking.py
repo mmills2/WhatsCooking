@@ -96,8 +96,8 @@ description and recipe for the food dish. You may be given some preferences. Gen
 this information on the given food dish. If you are given preferences, keep them in mind when gernerating the queries. \
 Only generate 2 queries."""
 
-CHANGE_PREFERENCS_PROMPT = """You are a research assistant questioning a person for a study. Ask what their new food \
-preferences are and give some examples of types of preferences. Don't say anything after asking for preferences. If the \
+CHANGE_PREFERENCS_PROMPT = """You are a professional recipe recommender inquiring about what kind of recipe the user \
+would like to cook. Ask what their new food preferences are. Don't say anything after asking for preferences. If the \
 person gives preferences, make sure they are food related. If the preferences are food related or they have no preferences, \
 respond with just the word "valid". If the preferences are not food related, tell the person sorry and kindly say you can \
 only accept food related preferences."""
