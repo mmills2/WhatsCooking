@@ -228,6 +228,23 @@ def adjust_dish_lists_node(state: AgentState):
         del dishesToShow[0]
     return {"dishesToShow": dishesToShow, "dishesSeen": dishesSeen}
 
+# change preferences agent
+def change_preferences_node(state: AgentState):
+    messages = [SystemMessage(content = CHANGE_PREFERENCS_PROMPT)]
+    aiResponse = ""
+    userInput = ""
+    while(aiResponse != "valid"):
+        response = model.invoke(messages)
+        aiResponse = response.content
+        if(aiResponse != "valid"):
+            print(aiResponse)
+            messages.append(AIMessage(content = aiResponse))
+            userInput = input(": ")
+            messages.append(HumanMessage(content = userInput))
+    dishesSeen = []
+    domainsVisited = []
+    return {"preferences": userInput, "dishesSeen": dishesSeen, "domainsVisited": domainsVisited}
+
 # show dish agent
 def show_dish_node(state: AgentState):
     dishResearch = "\n\n".join(state['dishResearchResults'])
@@ -271,6 +288,7 @@ builder.add_node("list_former", dish_list_former_node)
 builder.add_node("show_dishes", show_dishes_node)
 builder.add_node("research_dish", research_dish_node)
 builder.add_node("more_dishes", adjust_dish_lists_node)
+builder.add_node("change_preferences", change_preferences_node)
 builder.add_node("show_dish", show_dish_node)
 builder.add_node("post_show_dish", post_show_dish_node)
 
@@ -279,10 +297,11 @@ builder.add_edge("greeter", "dish_search")
 builder.add_edge("dish_search", "list_former")
 builder.add_edge("research_dish", "show_dish")
 builder.add_edge("show_dish", "post_show_dish")
+builder.add_edge("change_preferences", "dish_search")
 
 # adds conditional edges
 builder.add_conditional_edges("list_former", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
-builder.add_conditional_edges("show_dishes", check_post_show_dishes_decision, {"researchDish": "research_dish", "seeMore": "more_dishes"})
+builder.add_conditional_edges("show_dishes", check_post_show_dishes_decision, {"researchDish": "research_dish", "seeMore": "more_dishes", "changePreference": "change_preferences"})
 builder.add_conditional_edges("post_show_dish", check_post_show_dish_decision, {"yes": "show_dishes", "no": END})
 builder.add_conditional_edges("more_dishes", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
 
