@@ -180,11 +180,11 @@ def check_dishes_to_show(state: AgentState):
 # show dishes node
 def show_dishes_node(state: AgentState):
     dishesToShow = state['dishesToShow']
-    print("Here are some dishes:")
+    print("\nHere are some dishes:")
     for x in range(min(len(dishesToShow), state['maxRecommendations'])):
-        print(dishesToShow[x])
+        print(" " + dishesToShow[x])
 
-    questionToUser = "Would you like to learn more about one of these dishes, see more dishes, or change your preferences?"
+    questionToUser = "\nWould you like to learn more about one of these dishes, see more dishes, or change your preferences?"
     print(questionToUser)
 
     messages = [
@@ -233,6 +233,7 @@ def change_preferences_node(state: AgentState):
     messages = [SystemMessage(content = CHANGE_PREFERENCS_PROMPT)]
     aiResponse = ""
     userInput = ""
+    print()
     while(aiResponse != "valid"):
         response = model.invoke(messages)
         aiResponse = response.content
@@ -251,12 +252,12 @@ def show_dish_node(state: AgentState):
     response = model.invoke([
         SystemMessage(content = SHOW_DISH_PROMPT),
         HumanMessage(content = dishResearch)])
-    print(response.content)
+    print("\n" + response.content)
 
 # post show dish agent
 def post_show_dish_node(state: AgentState):
 
-    questionToUser = "Would you like to return to the list of dishes?"
+    questionToUser = "\nWould you like to return to the list of dishes?"
     print(questionToUser)
 
     messages = [
@@ -311,9 +312,9 @@ builder.set_entry_point("greeter")
 # compiles graph so application can be run
 graph = builder.compile(checkpointer = memory)
 
-# stores history of graph states
-thread = {"configurable": {"thread_id": "1"}}
+config = {"recursion_limit": 100, "configurable": {"thread_id": "1"}}
 
 # runs the application and prints out the AgentState after each node runs
-for event in graph.stream({"maxRecommendations": 10}, thread):
-    print(event)
+for event in graph.stream({"maxRecommendations": 10}, config):
+    # print(event)
+    pass
