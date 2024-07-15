@@ -40,6 +40,7 @@ class Dishes(BaseModel):
 # stores inputs and outputs for nodes
 class AgentState(TypedDict):
     userDecision: UserDecision
+    preferences: str
     dishSearchResults: List[str]
     dishesFromSearch: List[str]
     dishesSeen: List[str]
@@ -170,34 +171,22 @@ def question_user(questionToUser: str, systemPrompt: str) -> UserDecision:
 
 # greeter agent
 def greeter_node(state: AgentState):
-    
-    questionToUser = "Hello! What kind of food are you in the mood for today? If you're not sure, that's totally okay. Do you have any preferences such as cuisine type (Italian, Mexican, Asian), dietary restrictions (vegetarian, gluten-free), or specific ingredients you'd like to include?"
-    print(questionToUser)
 
-    messages = [
-        SystemMessage(content = GREETER_PROMPT),
-        AIMessage(content = questionToUser)    
-    ]
-    
-    userDecision = UserDecision(decision = "insufficientResponse")
-    while(userDecision.decision == "insufficientResponse"):
-        if(userDecision.clarifyingRespone):
-            print(userDecision.clarifyingRespone)
-            messages.append(AIMessage(content = userDecision.clarifyingRespone))
-        userInput = input(": ")
-        messages.append(HumanMessage(content = userInput))
-        userDecision = model.with_structured_output(UserDecision).invoke(messages)
-    return {"userDecision": userDecision}
+    userDecision = question_user("Hello! What kind of food are you in the mood for today? If you're not sure, that's totally okay. Do you have any preferences such as cuisine type (Italian, Mexican, Asian), dietary restrictions (vegetarian, gluten-free), or specific ingredients you'd like to include?", GREETER_PROMPT)
+
+    return {"userDecision": userDecision, "preferences": userDecision.preferences}
 
 # dish searcher agent
 def dish_searcher_node(state: AgentState):
     generatedQueries = model.with_structured_output(Queries).invoke([
         SystemMessage(content = DISH_SEARCH_PROMPT),
-        HumanMessage(content = f"My food dish preferences are: {state['userDecision'].preferences}")
+        HumanMessage(content = f"My food dish preferences are: {state['preferences']}")
     ])
     dishSearchResults = []
     domainsVisited = state['domainsVisited'] or []
     for generatedQuery in generatedQueries.queriesList:
+        print(state['preferences'])
+        print(generatedQuery)
         searchResults = tavily.search(query = generatedQuery, max_results = 3, exclude_domains = state['domainsVisited'])
         for searchResult in searchResults['results']:
             domainsVisited.append(urlparse(searchResult['url']).netloc)
@@ -209,7 +198,7 @@ def dish_list_former_node(state: AgentState):
     dishesResearch = "\n\n".join(state['dishSearchResults'])
     dishes = model.with_structured_output(Dishes).invoke([
         SystemMessage(content = DISH_LIST_FORMER_PROMPT),
-        HumanMessage(content = f"Food dish prefences: {state['userDecision'].preferences}\n{dishesResearch}")
+        HumanMessage(content = f"Food dish prefences: {state['preferences']}\n{dishesResearch}")
     ])
     dishesToShow = list(set(dishes.dishesList) - set(state['dishesSeen'] or []))
     return {"dishesFromSearch": dishes.dishesList, "dishesToShow": dishesToShow}
@@ -225,22 +214,8 @@ def show_dishes_node(state: AgentState):
     for x in range(min(len(dishesToShow), state['maxRecommendations'])):
         print(" " + dishesToShow[x])
 
-    questionToUser = "\nWould you like to learn more about one of these dishes, see more dishes, or change your preferences?"
-    print(questionToUser)
+    userDecision = question_user("\nWould you like to learn more about one of these dishes, see more dishes, or change your preferences?", POST_LIST_DISPLAY_PROMPT)
 
-    messages = [
-        SystemMessage(content = POST_LIST_DISPLAY_PROMPT),
-        AIMessage(content = questionToUser)    
-    ]
-    
-    userDecision = UserDecision(decision = "insufficientResponse")
-    while(userDecision.decision == "insufficientResponse"):
-        if(userDecision.clarifyingRespone):
-            print(userDecision.clarifyingRespone)
-            messages.append(AIMessage(content = userDecision.clarifyingRespone))
-        userInput = input(": ")
-        messages.append(HumanMessage(content = userInput))
-        userDecision = model.with_structured_output(UserDecision).invoke(messages)
     return {"userDecision": userDecision}
 
 # checks if user wants to learn more about a dish, see more dishes, or change their preferences
@@ -251,7 +226,7 @@ def check_post_show_dishes_decision(state: AgentState):
 def research_dish_node(state: AgentState):
     generatedQueries = model.with_structured_output(Queries).invoke([
         SystemMessage(content = RESEARCH_DISH_PROMPT),
-        HumanMessage(content = f"Food dish: {state['userDecision'].foodDish}\nPreferences: {state['userDecision'].preferences}")
+        HumanMessage(content = f"Food dish: {state['userDecision'].foodDish}\nPreferences: {state['preferences']}")
     ])
     dishResearchResults = []
     for generatedQuery in generatedQueries.queriesList:
@@ -272,22 +247,8 @@ def adjust_dish_lists_node(state: AgentState):
 # change preferences agent
 def change_preferences_node(state: AgentState):
 
-    questionToUser = "\nWhat are your new food preferences?"
-    print(questionToUser)
+    userDecision = question_user("\nWhat are your new food preferences?", CHANGE_PREFERENCES_PROMPT)
 
-    messages = [
-        SystemMessage(content = CHANGE_PREFERENCES_PROMPT),
-        AIMessage(content = questionToUser)    
-    ]
-    
-    userDecision = UserDecision(decision = "insufficientResponse")
-    while(userDecision.decision == "insufficientResponse"):
-        if(userDecision.clarifyingRespone):
-            print(userDecision.clarifyingRespone)
-            messages.append(AIMessage(content = userDecision.clarifyingRespone))
-        userInput = input(": ")
-        messages.append(HumanMessage(content = userInput))
-        userDecision = model.with_structured_output(UserDecision).invoke(messages)
     dishesSeen = []
     domainsVisited = []
     return {"preferences": userDecision.preferences, "dishesSeen": dishesSeen, "domainsVisited": domainsVisited}
@@ -303,22 +264,8 @@ def show_dish_node(state: AgentState):
 # post show dish agent
 def post_show_dish_node(state: AgentState):
 
-    questionToUser = "\nWould you like to return to the list of dishes?"
-    print(questionToUser)
+    userDecision = question_user("\nWould you like to return to the list of dishes?", POST_SHOW_DISH_PROMPT)
 
-    messages = [
-        SystemMessage(content = POST_SHOW_DISH_PROMPT),
-        AIMessage(content = questionToUser)
-    ]
-
-    userDecision = UserDecision(decision = "insufficientResponse")
-    while(userDecision.decision == "insufficientResponse"):
-        if(userDecision.clarifyingRespone):
-            print(userDecision.clarifyingRespone)
-            messages.append(AIMessage(content = userDecision.clarifyingRespone))
-        userInput = input(": ")
-        messages.append(HumanMessage(content = userInput))
-        userDecision = model.with_structured_output(UserDecision).invoke(messages)
     return {"userDecision": userDecision}
 
 # checks if user wants to return to dishes after view a specific dish
