@@ -34,7 +34,7 @@ class Dishes(BaseModel):
 class UserDecision(BaseModel):
     decision: str
     foodDish: Optional[str]
-    newPreferences: Optional[str]
+    preferences: Optional[str]
     clarifyingRespone: Optional[str]
 
 # stores inputs and outputs for nodes
@@ -53,10 +53,19 @@ class AgentState(TypedDict):
 GREETER_PROMPT = """You are a professional recipe recommender inquiring about what kind of recipe the user \
 would like to cook. Make sure to greet the user. You must ask what kind of food they are in the mood for. Tell \
 the user if they do not know what they are in the mood for that is ok. Ask if the user has any other preferences \
-and give some examples of types of preferences. Don't say anything after asking for preferences. If the user gives preferences, \
-make sure they are food related. If the preferences are food related or they have no preferences, respond with just \
-the word "valid". If the preferences are not food related, tell the user sorry and kindly say you can only accept food \
-related preferences."""
+and give some examples of types of preferences. Don't say anything after asking for preferences. If the user gives \
+preferences, make sure they are food related. If the preferences are food related or they have no preferences, respond \
+with the following output:
+
+{'decision': "valid",
+'preferences': <user preferences>}
+
+If the preferences are not food related, tell the person sorry and kindly say you can only accept food related preferences. \
+Respond with the following output:
+
+{'decision': "insufficientResponse",
+'clarifyingRespone': <message to user>}
+"""
 
 DISH_SEARCH_PROMPT = """You are a researcher with the task of finding food recipes. You may be given preferences \
 about the types of food recipes to find. Generate a list of search queries to find relevant food recipes. Only generate \
@@ -144,18 +153,22 @@ outputs based on the user's answer:
 # greeter agent
 def greeter_node(state: AgentState):
 
-    messages = [SystemMessage(content = GREETER_PROMPT)]
-    aiResponse = ""
-    userInput = ""
-    while(aiResponse != "valid"):
-        response = model.invoke(messages)
-        aiResponse = response.content
-        if(aiResponse != "valid"):
-            print(aiResponse)
-            messages.append(AIMessage(content = aiResponse))
-            userInput = input(": ")
-            messages.append(HumanMessage(content = userInput))
-    return {"preferences": userInput}
+    questionToUser = "Hello! What kind of food are you in the mood for today? If you're not sure, that's totally okay. Do you have any preferences such as cuisine type (Italian, Mexican, Asian), dietary restrictions (vegetarian, gluten-free), or specific ingredients you'd like to include?"
+    print(questionToUser)
+
+    messages = [
+        SystemMessage(content = GREETER_PROMPT),
+        AIMessage(content = questionToUser)    
+    ]
+    userDecision = UserDecision(decision = "insufficientResponse")
+    while(userDecision.decision == "insufficientResponse"):
+        if(userDecision.clarifyingRespone):
+            print(userDecision.clarifyingRespone)
+            messages.append(AIMessage(content = userDecision.clarifyingRespone))
+        userInput = input(": ")
+        messages.append(HumanMessage(content = userInput))
+        userDecision = model.with_structured_output(UserDecision).invoke(messages)
+    return {"userDecision": userDecision}
 
 # dish searcher agent
 def dish_searcher_node(state: AgentState):
@@ -258,7 +271,7 @@ def change_preferences_node(state: AgentState):
         userDecision = model.with_structured_output(UserDecision).invoke(messages)
     dishesSeen = []
     domainsVisited = []
-    return {"preferences": userDecision.newPreferences, "dishesSeen": dishesSeen, "domainsVisited": domainsVisited}
+    return {"preferences": userDecision.preferences, "dishesSeen": dishesSeen, "domainsVisited": domainsVisited}
 
 # show dish agent
 def show_dish_node(state: AgentState):
