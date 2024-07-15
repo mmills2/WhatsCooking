@@ -4,7 +4,6 @@ _ = load_dotenv()
 
 # necessary imports
 import os
-import operator
 from langgraph.graph import StateGraph, END
 from typing import TypedDict, List, Optional
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
@@ -15,13 +14,13 @@ from tavily import TavilyClient
 from urllib.parse import urlparse
 
 # initializes OpenAI model
-model = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+model = ChatOpenAI(model="gpt-3.5-turbo", temperature = 0)
 
 # used to save states of graph to allow returning to previous states and modifying states
 memory = SqliteSaver.from_conn_string(":memory:")
 
 # initializes Tavily search engine tool
-tavily = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
+tavily = TavilyClient(api_key = os.environ["TAVILY_API_KEY"])
 
 # stores list of queries and provides structured output for generating queries
 class Queries(BaseModel):
@@ -35,6 +34,7 @@ class Dishes(BaseModel):
 class UserDecision(BaseModel):
     decision: str
     foodDish: Optional[str]
+    newPreferences: Optional[str]
     clarifyingRespone: Optional[str]
 
 # stores inputs and outputs for nodes
@@ -96,11 +96,20 @@ description and recipe for the food dish. You may be given some preferences. Gen
 this information on the given food dish. If you are given preferences, keep them in mind when gernerating the queries. \
 Only generate 2 queries."""
 
-CHANGE_PREFERENCS_PROMPT = """You are a professional recipe recommender inquiring about what kind of recipe the user \
+CHANGE_PREFERENCES_PROMPT = """You are a professional recipe recommender inquiring about what kind of recipe the user \
 would like to cook. Ask what their new food preferences are. Don't say anything after asking for preferences. If the \
 person gives preferences, make sure they are food related. If the preferences are food related or they have no preferences, \
-respond with just the word "valid". If the preferences are not food related, tell the person sorry and kindly say you can \
-only accept food related preferences."""
+respond with the following output:
+
+{'decision': "valid",
+'preferences': <user preferences>}
+
+If the preferences are not food related, tell the person sorry and kindly say you can only accept food related preferences. \
+Respond with the following output:
+
+{'decision': "insufficientResponse",
+'clarifyingRespone': <message to user>}
+"""
 
 SHOW_DISH_PROMPT = """You are a proffesional writer for a cook book. You will be given information about a specific food dish. You \
 must write a 2-3 sentence description on the food dish. Then you must write a list of required ingredients. Then you must write step by step \
@@ -230,21 +239,26 @@ def adjust_dish_lists_node(state: AgentState):
 
 # change preferences agent
 def change_preferences_node(state: AgentState):
-    messages = [SystemMessage(content = CHANGE_PREFERENCS_PROMPT)]
-    aiResponse = ""
-    userInput = ""
-    print()
-    while(aiResponse != "valid"):
-        response = model.invoke(messages)
-        aiResponse = response.content
-        if(aiResponse != "valid"):
-            print(aiResponse)
-            messages.append(AIMessage(content = aiResponse))
-            userInput = input(": ")
-            messages.append(HumanMessage(content = userInput))
+
+    questionToUser = "\nWhat are your new food preferences?"
+    print(questionToUser)
+
+    messages = [
+        SystemMessage(content = CHANGE_PREFERENCES_PROMPT),
+        AIMessage(content = questionToUser)
+    ]
+    
+    userDecision = UserDecision(decision = "insufficientResponse")
+    while(userDecision.decision == "insufficientResponse"):
+        if(userDecision.clarifyingRespone):
+            print(userDecision.clarifyingRespone)
+            messages.append(AIMessage(content = userDecision.clarifyingRespone))
+        userInput = input(": ")
+        messages.append(HumanMessage(content = userInput))
+        userDecision = model.with_structured_output(UserDecision).invoke(messages)
     dishesSeen = []
     domainsVisited = []
-    return {"preferences": userInput, "dishesSeen": dishesSeen, "domainsVisited": domainsVisited}
+    return {"preferences": userDecision.newPreferences, "dishesSeen": dishesSeen, "domainsVisited": domainsVisited}
 
 # show dish agent
 def show_dish_node(state: AgentState):
