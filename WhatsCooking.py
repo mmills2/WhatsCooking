@@ -22,6 +22,13 @@ memory = SqliteSaver.from_conn_string(":memory:")
 # initializes Tavily search engine tool
 tavily = TavilyClient(api_key = os.environ["TAVILY_API_KEY"])
 
+# store user's decision after being shown food dishes
+class UserDecision(BaseModel):
+    decision: str
+    preferences: Optional[str]
+    foodDish: Optional[str]
+    clarifyingRespone: Optional[str]
+
 # stores list of queries and provides structured output for generating queries
 class Queries(BaseModel):
     queriesList: List[str]
@@ -30,23 +37,15 @@ class Queries(BaseModel):
 class Dishes(BaseModel):
     dishesList: List[str]
 
-# store user's decision after being shown food dishes
-class UserDecision(BaseModel):
-    decision: str
-    foodDish: Optional[str]
-    preferences: Optional[str]
-    clarifyingRespone: Optional[str]
-
 # stores inputs and outputs for nodes
 class AgentState(TypedDict):
-    preferences: str
+    userDecision: UserDecision
     dishSearchResults: List[str]
     dishesFromSearch: List[str]
     dishesSeen: List[str]
     dishesToShow: List[str]
     domainsVisited: List[str]
     maxRecommendations: int
-    userDecision: UserDecision
     dishResearchResults: List[str]
 
 # system prompts for agents
@@ -150,9 +149,28 @@ outputs based on the user's answer:
 'clarifyingRespone': <message to user>}
 """
 
+# user input validation loop
+def question_user(questionToUser: str, systemPrompt: str) -> UserDecision:
+    print(questionToUser)
+
+    messages = [
+        SystemMessage(content = systemPrompt),
+        AIMessage(content = questionToUser)    
+    ]
+    
+    userDecision = UserDecision(decision = "insufficientResponse")
+    while(userDecision.decision == "insufficientResponse"):
+        if(userDecision.clarifyingRespone):
+            print(userDecision.clarifyingRespone)
+            messages.append(AIMessage(content = userDecision.clarifyingRespone))
+        userInput = input(": ")
+        messages.append(HumanMessage(content = userInput))
+        userDecision = model.with_structured_output(UserDecision).invoke(messages)
+    return userDecision
+
 # greeter agent
 def greeter_node(state: AgentState):
-
+    
     questionToUser = "Hello! What kind of food are you in the mood for today? If you're not sure, that's totally okay. Do you have any preferences such as cuisine type (Italian, Mexican, Asian), dietary restrictions (vegetarian, gluten-free), or specific ingredients you'd like to include?"
     print(questionToUser)
 
@@ -160,6 +178,7 @@ def greeter_node(state: AgentState):
         SystemMessage(content = GREETER_PROMPT),
         AIMessage(content = questionToUser)    
     ]
+    
     userDecision = UserDecision(decision = "insufficientResponse")
     while(userDecision.decision == "insufficientResponse"):
         if(userDecision.clarifyingRespone):
@@ -174,7 +193,7 @@ def greeter_node(state: AgentState):
 def dish_searcher_node(state: AgentState):
     generatedQueries = model.with_structured_output(Queries).invoke([
         SystemMessage(content = DISH_SEARCH_PROMPT),
-        HumanMessage(content = f"My food dish preferences are: {state['preferences']}")
+        HumanMessage(content = f"My food dish preferences are: {state['userDecision'].preferences}")
     ])
     dishSearchResults = []
     domainsVisited = state['domainsVisited'] or []
@@ -190,7 +209,7 @@ def dish_list_former_node(state: AgentState):
     dishesResearch = "\n\n".join(state['dishSearchResults'])
     dishes = model.with_structured_output(Dishes).invoke([
         SystemMessage(content = DISH_LIST_FORMER_PROMPT),
-        HumanMessage(content = f"Food dish prefences: {state['preferences']}\n{dishesResearch}")
+        HumanMessage(content = f"Food dish prefences: {state['userDecision'].preferences}\n{dishesResearch}")
     ])
     dishesToShow = list(set(dishes.dishesList) - set(state['dishesSeen'] or []))
     return {"dishesFromSearch": dishes.dishesList, "dishesToShow": dishesToShow}
@@ -211,9 +230,9 @@ def show_dishes_node(state: AgentState):
 
     messages = [
         SystemMessage(content = POST_LIST_DISPLAY_PROMPT),
-        AIMessage(content = questionToUser)
+        AIMessage(content = questionToUser)    
     ]
-
+    
     userDecision = UserDecision(decision = "insufficientResponse")
     while(userDecision.decision == "insufficientResponse"):
         if(userDecision.clarifyingRespone):
@@ -232,7 +251,7 @@ def check_post_show_dishes_decision(state: AgentState):
 def research_dish_node(state: AgentState):
     generatedQueries = model.with_structured_output(Queries).invoke([
         SystemMessage(content = RESEARCH_DISH_PROMPT),
-        HumanMessage(content = f"Food dish: {state['userDecision'].foodDish}\nPreferences: {state['preferences']}")
+        HumanMessage(content = f"Food dish: {state['userDecision'].foodDish}\nPreferences: {state['userDecision'].preferences}")
     ])
     dishResearchResults = []
     for generatedQuery in generatedQueries.queriesList:
@@ -258,7 +277,7 @@ def change_preferences_node(state: AgentState):
 
     messages = [
         SystemMessage(content = CHANGE_PREFERENCES_PROMPT),
-        AIMessage(content = questionToUser)
+        AIMessage(content = questionToUser)    
     ]
     
     userDecision = UserDecision(decision = "insufficientResponse")
