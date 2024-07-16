@@ -42,12 +42,14 @@ class AgentState(TypedDict):
     userDecision: UserDecision
     preferences: str
     dishSearchResults: List[str]
+    maxDishSearchResults: int
     dishesFromSearch: List[str]
     dishesSeen: List[str]
     dishesToShow: List[str]
     domainsVisited: List[str]
     maxRecommendations: int
     dishResearchResults: List[str]
+    maxDishResearchResults: int
 
 # system prompts for agents
 GREETER_PROMPT = """You are a professional recipe recommender inquiring about what kind of recipe the user \
@@ -173,7 +175,6 @@ def question_user(questionToUser: str, systemPrompt: str) -> UserDecision:
 def greeter_node(state: AgentState):
 
     userDecision = question_user("Hello! What kind of food are you in the mood for today? If you're not sure, that's totally okay. Do you have any preferences such as cuisine type (Italian, Mexican, Asian), dietary restrictions (vegetarian, gluten-free), or specific ingredients you'd like to include?", GREETER_PROMPT)
-
     return {"userDecision": userDecision, "preferences": userDecision.preferences}
 
 # dish searcher agent
@@ -185,9 +186,7 @@ def dish_searcher_node(state: AgentState):
     dishSearchResults = []
     domainsVisited = state['domainsVisited'] or []
     for generatedQuery in generatedQueries.queriesList:
-        print(state['preferences'])
-        print(generatedQuery)
-        searchResults = tavily.search(query = generatedQuery, max_results = 3, exclude_domains = state['domainsVisited'])
+        searchResults = tavily.search(query = generatedQuery, max_results = state['maxDishSearchResults'], exclude_domains = state['domainsVisited'])
         for searchResult in searchResults['results']:
             domainsVisited.append(urlparse(searchResult['url']).netloc)
             dishSearchResults.append(searchResult['content'])
@@ -230,7 +229,7 @@ def research_dish_node(state: AgentState):
     ])
     dishResearchResults = []
     for generatedQuery in generatedQueries.queriesList:
-        searchResults = tavily.search(query = generatedQuery, max_results = 3)
+        searchResults = tavily.search(query = generatedQuery, max_results = state['maxDishResearchResults'])
         for searchResult in searchResults['results']:
             dishResearchResults.append(searchResult['content'])
     return {"dishResearchResults": dishResearchResults}
@@ -308,6 +307,6 @@ graph = builder.compile(checkpointer = memory)
 config = {"recursion_limit": 100, "configurable": {"thread_id": "1"}}
 
 # runs the application and prints out the AgentState after each node runs
-for event in graph.stream({"maxRecommendations": 10}, config):
+for event in graph.stream({"maxDishSearchResults": 3, "maxRecommendations": 10, "maxDishResearchResults": 3}, config):
     # print(event)
     pass
