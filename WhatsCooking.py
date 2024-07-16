@@ -41,21 +41,6 @@ class Queries(BaseModel):
 class Dishes(BaseModel):
     dishesList: List[str]
 
-# system prompts for agents 
-
-POST_SHOW_DISH_PROMPT = """You are a manager deciding what action to take based on a user message. Ask the user if they \
-would like to return to the list of dishes. Only accept definitive answers (no maybes or not sure or etc). If they give \
-an insufficient answer, kindly ask them to please choose yes or no and repeat the question. Reply with one of the following \
-outputs based on the user's answer:
-
-{'decision': "yes"}
-
-{'decision': "no"}
-
-{'decision': "insufficientResponse",
-'clarifyingRespone': <message to user>}
-"""
-
 # user input validation loop
 def question_user(questionToUser: str, systemPrompt: str) -> UserDecision:
     print(questionToUser)
@@ -108,11 +93,7 @@ change_preferences_agent = ChangePreferencesAgent()
 show_dish_agent = ShowDishAgent()
 
 # post show dish agent
-def post_show_dish_node(state: AgentState):
-
-    userDecision = question_user("\nWould you like to return to the list of dishes?", POST_SHOW_DISH_PROMPT)
-
-    return {"userDecision": userDecision}
+list_return_agent = ListReturnAgent()
 
 # checks if user wants to return to dishes after view a specific dish
 def check_post_show_dish_decision(state: AgentState):
@@ -130,19 +111,19 @@ builder.add_node("research_dish", ResearchDishAgent.run)
 builder.add_node("more_dishes", more_dishes_agent.run)
 builder.add_node("change_preferences", change_preferences_agent.run)
 builder.add_node("show_dish", show_dish_agent.run)
-builder.add_node("post_show_dish", post_show_dish_node)
+builder.add_node("list_return", list_return_agent.run)
 
 # adds edges between nodes
 builder.add_edge("greeter", "dish_search")
 builder.add_edge("dish_search", "list_former")
 builder.add_edge("research_dish", "show_dish")
-builder.add_edge("show_dish", "post_show_dish")
+builder.add_edge("show_dish", "list_return")
 builder.add_edge("change_preferences", "dish_search")
 
 # adds conditional edges
 builder.add_conditional_edges("list_former", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
 builder.add_conditional_edges("show_dishes", check_post_show_dishes_decision, {"researchDish": "research_dish", "moreDishes": "more_dishes", "changePreferences": "change_preferences"})
-builder.add_conditional_edges("post_show_dish", check_post_show_dish_decision, {"yes": "show_dishes", "no": END})
+builder.add_conditional_edges("list_return", check_post_show_dish_decision, {"yes": "show_dishes", "no": END})
 builder.add_conditional_edges("more_dishes", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
 
 # sets start of graph
