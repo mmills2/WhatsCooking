@@ -308,9 +308,18 @@ graph = builder.compile(checkpointer = memory)
 config = configparser.ConfigParser()
 config.read('settings.ini')
 
-graphConfig = {"recursion_limit": 100, "configurable": {"thread_id": "1"}}
+graphInput = {
+    "maxDishSearchResults": config['MAXES'].getint('dishSearchResults'),
+    "maxRecommendations": config['MAXES'].getint('dishRecommendations'),
+    "maxDishResearchResults": config['MAXES'].getint('dishResearchResults')
+}
+
+graphConfig = {
+    "recursion_limit": config['MAXES'].getint('recursion_limit'),
+    "configurable": {"thread_id": "1"}
+}
 
 # runs the application and prints out the AgentState after each node runs
-for event in graph.stream({"maxDishSearchResults": config['MAXES'].getint('dishSearchResults'), "maxRecommendations": config['MAXES'].getint('dishRecommendations'), "maxDishResearchResults": config['MAXES'].getint('dishResearchResults')}, graphConfig):
+for event in graph.stream(graphInput, graphConfig):
     # print(event)
     pass
