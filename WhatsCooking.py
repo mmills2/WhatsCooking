@@ -69,10 +69,10 @@ config.read('settings.ini')
 # dictionary of inputs for the AgentState of the CompiledGraph
 graphInput = {
     "numDishSearchQueries": config['QUERIES'].getint('numDishSearchQueries'),
-    "maxDishSearchResults": config['MAXES'].getint('maxDishSearchResults'),
-    "maxRecommendations": config['MAXES'].getint('maxRecommendations'),
+    "maxDishSearchResults": config['SEARCH.RESULTS'].getint('maxDishSearchResults'),
+    "maxRecommendations": config['DISHES.LIST'].getint('maxRecommendations'),
     "numDishResearchQueries": config['QUERIES'].getint('numDishResearchQueries'),
-    "maxDishResearchResults": config['MAXES'].getint('maxDishResearchResults')
+    "maxDishResearchResults": config['SEARCH.RESULTS'].getint('maxDishResearchResults')
 }
 
 # dictionary of configuration settings for running the CompiledGraph
