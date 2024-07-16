@@ -27,7 +27,7 @@ class DishSearchAgent(Agent):# inherits Agent class
     # generates search queries to find food dishes based on the user's preferences and returns the results - runs when node is called
     def run(self, state: AgentState):
         
-        # invokes AI and returns response in Queries schema
+        # invokes AI and returns generated queries in Queries schema
         generatedQueries = model.with_structured_output(Queries).invoke([
             SystemMessage(content = DISH_SEARCH_PROMPT.format(state['numDishSearchQueries'])),
             HumanMessage(content = f"My food dish preferences are: {state['preferences']}")
