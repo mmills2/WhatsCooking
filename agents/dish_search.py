@@ -48,3 +48,5 @@ class DishSearchAgent(Agent): # inherits Agent class
 
         # returned to AgentState
         return {"dishSearchResults": dishSearchResults, "domainsVisited": domainsVisited}
+
+# next node: list_former

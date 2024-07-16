@@ -34,3 +34,5 @@ class GreeterAgent(Agent): # inherits Agent class
         
         # returned to AgentState
         return {"preferences": userDecision.preferences}
+
+# next node: dish_search

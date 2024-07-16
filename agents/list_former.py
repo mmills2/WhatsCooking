@@ -37,3 +37,5 @@ class ListFormerAgent(Agent):# inherits Agent class
 
         # returned to AgentState
         return {"dishesFromSearch": dishes.dishesList, "dishesToShow": dishesToShow}
+
+# next node: if dishesToShow is empty then dish_search, otherwise show_dishes

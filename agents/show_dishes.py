@@ -47,3 +47,5 @@ class ShowDishesAgent(Agent): # inherits Agent class
 
         # returned to AgentState
         return {"userDecision": userDecision}
+    
+# next node: based on user answer either research_dish, more_dishes, or change_preferences

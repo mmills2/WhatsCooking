@@ -33,7 +33,7 @@ class ResearchDishAgent(Agent): # inherits Agent class
             HumanMessage(content = f"Food dish: {state['userDecision'].foodDish}\nPreferences: {state['preferences']}")
         ])
 
-        # lists of search results that will be returned
+        # list of search results that will be returned
         dishResearchResults = []
 
         # for each search query will return maxDishResearchResults number of results
@@ -46,3 +46,5 @@ class ResearchDishAgent(Agent): # inherits Agent class
         
         # returned to AgentState
         return {"dishResearchResults": dishResearchResults}
+
+# next node: list_return
