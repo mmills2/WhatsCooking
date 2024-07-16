@@ -1,10 +1,19 @@
+# loads environment variables
+from dotenv import load_dotenv
+_ = load_dotenv()
+
 from structured_outputs import UserDecision
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_openai import ChatOpenAI
+
+# initializes OpenAI model
+model = ChatOpenAI(model="gpt-3.5-turbo", temperature = 0)
 
 class Agent:
-    def __init__(self, state):
-        self.state = state
+    def __init__(self):
+        pass
     
-    def question_user(questionToUser: str, systemPrompt: str) -> UserDecision:
+    def question_user(self, questionToUser: str, systemPrompt: str) -> UserDecision:
         print(questionToUser)
 
         messages = [
