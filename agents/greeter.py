@@ -23,11 +23,14 @@ Respond with the following output:
 
 # greeter agent
 class GreeterAgent(Agent): # inherits Agent class
-    def __init_(self): # no data to initialize on initialization 
+    def __init__(self): # no data to initialize on initialization 
         pass
 
     # greets the user and gets the user's food preferences - runs when node is called
     def run(self, state: AgentState): # AgentState provided by StateGraph
+        
         questionToUser = "Hello! What kind of food are you in the mood for today? If you're not sure, that's totally okay. Do you have any preferences such as cuisine type (Italian, Mexican, Asian), dietary restrictions (vegetarian, gluten-free), or specific ingredients you'd like to include?"
         userDecision = super().question_user(questionToUser, GREETER_PROMPT) # questions user with method from parent Agent class and returns validated user answer
+        
+        # returned to AgentState
         return {"preferences": userDecision.preferences}

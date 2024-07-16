@@ -1,5 +1,5 @@
 # necessary imports
-from structured_outputs import UserDecision # used for questioning user
+from structured_outputs import UserDecision # schema used for storing user output data
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage # used to define message types to AI model
 from langchain_openai import ChatOpenAI # OpenAI model
 
