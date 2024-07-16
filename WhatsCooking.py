@@ -1,3 +1,7 @@
+# loads environment variables (OPENAI_API_KEY & TAVILY_API_KEY)
+from dotenv import load_dotenv
+load_dotenv()
+
 # necessary imports
 import configparser # used for application configuration settings
 from langgraph.graph import StateGraph, END # type of graph being used and end graph execution node
