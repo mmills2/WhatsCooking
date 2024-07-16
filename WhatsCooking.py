@@ -43,23 +43,6 @@ class Dishes(BaseModel):
 
 # system prompts for agents 
 
-SHOW_DISH_PROMPT = """You are a proffesional writer for a cook book. You will be given information about a specific food dish. You \
-must write a 2-3 sentence description on the food dish. Then you must write a list of required ingredients. Then you must write step by step \
-instructions on how to make the food dish. Don't say anything after the instructions. Use the below format for your output.
-
-<2-3 sentence food description>
-
-Ingredients:
-- <ingredient 1>
-- <ingredient 2>
-...
-
-Instructions
-1. <step 1>
-2. <step 2>
-...
-"""
-
 POST_SHOW_DISH_PROMPT = """You are a manager deciding what action to take based on a user message. Ask the user if they \
 would like to return to the list of dishes. Only accept definitive answers (no maybes or not sure or etc). If they give \
 an insufficient answer, kindly ask them to please choose yes or no and repeat the question. Reply with one of the following \
@@ -122,12 +105,7 @@ more_dishes_agent = MoreDishesAgent()
 change_preferences_agent = ChangePreferencesAgent()
 
 # show dish agent
-def show_dish_node(state: AgentState):
-    dishResearch = "\n\n".join(state['dishResearchResults'])
-    response = model.invoke([
-        SystemMessage(content = SHOW_DISH_PROMPT),
-        HumanMessage(content = dishResearch)])
-    print("\n" + response.content)
+show_dish_agent = ShowDishAgent()
 
 # post show dish agent
 def post_show_dish_node(state: AgentState):
@@ -151,7 +129,7 @@ builder.add_node("show_dishes", show_dishes_agent.run)
 builder.add_node("research_dish", ResearchDishAgent.run)
 builder.add_node("more_dishes", more_dishes_agent.run)
 builder.add_node("change_preferences", change_preferences_agent.run)
-builder.add_node("show_dish", show_dish_node)
+builder.add_node("show_dish", show_dish_agent.run)
 builder.add_node("post_show_dish", post_show_dish_node)
 
 # adds edges between nodes
