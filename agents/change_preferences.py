@@ -24,7 +24,7 @@ class ChangePreferencesAgent(Agent): # inherits Agent class
     def __init__(self): # no data to initialize on initialization
         pass
 
-    # gets the user's new food preferences and resets dishesSeen and domainsVisited
+    # gets the user's new food preferences and resets dishesSeen and domainsVisited - runs when node is called
     def run(self, state: AgentState):
 
         questionToUser = "\nWhat are your new food preferences?"
