@@ -1,9 +1,9 @@
 # necessary imports
-import configparser
-from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.sqlite import SqliteSaver
-from agent_state import AgentState
-from agents import *
+import configparser # used for application configuration settings
+from langgraph.graph import StateGraph, END # type of graph being used and end graph execution node
+from langgraph.checkpoint.sqlite import SqliteSaver # used for state memory
+from agent_state import AgentState # state schema for StateGraph
+from agents import * # imports all agents from agents folder
 
 # initializing agents
 greeter_agent = GreeterAgent()
@@ -16,21 +16,17 @@ change_preferences_agent = ChangePreferencesAgent()
 show_dish_agent = ShowDishAgent()
 list_return_agent = ListReturnAgent()
 
-# check methods for conditional edges
-
-# dishes to show is greater than zero check
-def check_dishes_to_show(state: AgentState):
+# methods that determine next node for conditional edges
+def check_dishes_to_show(state: AgentState): # checks if dishes to show is greater than zero
     return len(state['dishesToShow']) > 0
 
-# checks if user wants to learn more about a dish, see more dishes, or change their preferences
-def check_post_show_dishes_decision(state: AgentState):
+def check_post_show_dishes_decision(state: AgentState): # checks if user wants to learn more about a dish, see more dishes, or change their preferences
     return state['userDecision'].decision
 
-# checks if user wants to return to dishes after view a specific dish
-def check_post_show_dish_decision(state: AgentState):
+def check_list_return_decision(state: AgentState): # checks if user wants to return to dishes after viewing a specific dish
     return state['userDecision'].decision
 
-# builds workflow of graph from added nodes and edges
+# initializes StateGraph with AgentState schema
 builder = StateGraph(AgentState)
 
 # adds nodes to graph
@@ -54,21 +50,23 @@ builder.add_edge("change_preferences", "dish_search")
 # adds conditional edges
 builder.add_conditional_edges("list_former", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
 builder.add_conditional_edges("show_dishes", check_post_show_dishes_decision, {"researchDish": "research_dish", "moreDishes": "more_dishes", "changePreferences": "change_preferences"})
-builder.add_conditional_edges("list_return", check_post_show_dish_decision, {"yes": "show_dishes", "no": END})
+builder.add_conditional_edges("list_return", check_list_return_decision, {"yes": "show_dishes", "no": END})
 builder.add_conditional_edges("more_dishes", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
 
 # sets start of graph
 builder.set_entry_point("greeter")
 
-# used to save states of graph to allow returning to previous states and modifying states
+# used to save states of AgentState to allow returning to previous states and modifying states
 memory = SqliteSaver.from_conn_string(":memory:")
 
-# compiles graph so application can be run
+# compiles StateGraph into CompiledGraph with memory support
 graph = builder.compile(checkpointer = memory)
 
+# application settings reader 
 config = configparser.ConfigParser()
 config.read('settings.ini')
 
+# dictionary of inputs for the AgentState of the CompiledGraph
 graphInput = {
     "numDishSearchQueries": config['QUERIES'].getint('numDishSearchQueries'),
     "maxDishSearchResults": config['MAXES'].getint('maxDishSearchResults'),
@@ -77,12 +75,13 @@ graphInput = {
     "maxDishResearchResults": config['MAXES'].getint('maxDishResearchResults')
 }
 
+# dictionary of configuration settings for running the CompiledGraph
 graphConfig = {
     "recursion_limit": config['GRAPH.CONFIG'].getint('recursion_limit'),
-    "configurable": {"thread_id": "1"}
+    "configurable": {"thread_id": "1"} # AgentSate history will be stored on thread "1"
 }
 
-# runs the application and prints out the AgentState after each node runs
-for event in graph.stream(graphInput, graphConfig):
-    # print(event)
+# runs the application with option to perform an action after after each node is run
+for event in graph.stream(graphInput, graphConfig): # event is AgentState after last node run
+    # print(event) # uncomment to print out AgentState after each node is run
     pass

@@ -1,7 +1,7 @@
 from .agent import Agent
 from agent_state import AgentState
 
-POST_LIST_DISPLAY_PROMPT = """You are a manager deciding what action to take based on a user message. The user will say \
+POST_SHOW_DISHES_PROMPT = """You are a manager deciding what action to take based on a user message. The user will say \
 something similar to one of three things:
 - They would like to learn more about a certain food dish
 - They would like to see more food dishes
@@ -34,6 +34,6 @@ class ShowDishesAgent(Agent):
         for x in range(min(len(dishesToShow), state['maxRecommendations'])):
             print(" " + dishesToShow[x])
 
-        userDecision = super().question_user("\nWould you like to learn more about one of these dishes, see more dishes, or change your preferences?", POST_LIST_DISPLAY_PROMPT)
+        userDecision = super().question_user("\nWould you like to learn more about one of these dishes, see more dishes, or change your preferences?", POST_SHOW_DISHES_PROMPT)
 
         return {"userDecision": userDecision}
