@@ -1,6 +1,9 @@
-from .agent import Agent
-from agent_state import AgentState
+# necessary imports
+from .agent import Agent # parent class for agents
+from agent_state import AgentState # stores input and output data for agent
 
+# system prompt
+# output style defined in prompt defines what fields in UserDecision to fill
 POST_SHOW_DISHES_PROMPT = """You are a manager deciding what action to take based on a user message. The user will say \
 something similar to one of three things:
 - They would like to learn more about a certain food dish
@@ -24,16 +27,23 @@ please choose one of the options. In both of these cases, reply with:
 'clarifyingRespone': <message to user>}
 """
 
-class ShowDishesAgent(Agent):
-    def __init__(self):
+# show dishes agent
+class ShowDishesAgent(Agent): # inherits Agent class
+    def __init__(self): # no data to initialize on initialization 
         pass
 
+    # shows maxRecommendations number of dishes and questions user if they want to learn more about a dish, see more like dishes, or change their food preferences
     def run(self, state: AgentState):
+
         dishesToShow = state['dishesToShow']
         print("\nHere are some dishes:")
+
+        # prints either maxRecommendations dishes or however many is left in the list if their are less than maxRecommendations
         for x in range(min(len(dishesToShow), state['maxRecommendations'])):
             print(" " + dishesToShow[x])
 
-        userDecision = super().question_user("\nWould you like to learn more about one of these dishes, see more dishes, or change your preferences?", POST_SHOW_DISHES_PROMPT)
+        questionToUser = "\nWould you like to learn more about one of these dishes, see more dishes, or change your preferences?"
+        userDecision = super().question_user(questionToUser, POST_SHOW_DISHES_PROMPT) # questions user with method from parent Agent class and returns validated user answer
 
+        # returned to AgentState
         return {"userDecision": userDecision}

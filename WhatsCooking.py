@@ -21,7 +21,7 @@ show_dish_agent = ShowDishAgent()
 list_return_agent = ListReturnAgent()
 
 # methods that determine next node for conditional edges
-def check_dishes_to_show(state: AgentState): # checks if dishes to show is greater than zero
+def check_dishes_to_show(state: AgentState): # checks if dishes to show is greater than zero - if not then dish search will be run, otherwise dishes will be shown
     return len(state['dishesToShow']) > 0
 
 def check_post_show_dishes_decision(state: AgentState): # checks if user wants to learn more about a dish, see more dishes, or change their preferences
