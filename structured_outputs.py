@@ -1,17 +1,16 @@
-from typing import List, Optional
-from langchain_core.pydantic_v1 import BaseModel
+# necessary imports
+from typing import List, Optional # used for variable type hints
+from langchain_core.pydantic_v1 import BaseModel # used for variable type validation
 
-# store user's decision after being shown food dishes
-class UserDecision(BaseModel):
+# structured output schemas for AI models to allow for consistent data output
+class UserDecision(BaseModel): # store user's decision after questioning the user
     decision: str
     preferences: Optional[str]
     foodDish: Optional[str]
     clarifyingRespone: Optional[str]
 
-# stores list of queries and provides structured output for generating queries
-class Queries(BaseModel):
+class Queries(BaseModel): # stores list of queries
     queriesList: List[str]
 
-# stores list of dishes and provides structured output for forming list
-class Dishes(BaseModel):
+class Dishes(BaseModel): # stores list of dishes
     dishesList: List[str]
