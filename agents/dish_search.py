@@ -20,7 +20,7 @@ about the types of food recipes to find. Generate a list of search queries to fi
 {} query(ies)."""
 
 # dish search agent
-class DishSearchAgent(Agent):# inherits Agent class
+class DishSearchAgent(Agent): # inherits Agent class
     def __init__(self): # no data to initialize on initialization 
         pass
 
@@ -29,7 +29,7 @@ class DishSearchAgent(Agent):# inherits Agent class
         
         # invokes AI and returns generated queries in Queries schema
         generatedQueries = model.with_structured_output(Queries).invoke([
-            SystemMessage(content = DISH_SEARCH_PROMPT.format(state['numDishSearchQueries'])),
+            SystemMessage(content = DISH_SEARCH_PROMPT.format(state['numDishSearchQueries'])), # inserts numDishSearchQueries into empty curly braces in DISH_SEARCH_PROMPT
             HumanMessage(content = f"My food dish preferences are: {state['preferences']}")
         ])
 
