@@ -131,13 +131,7 @@ def check_post_show_dishes_decision(state: AgentState):
 research_dish_agent = ResearchDishAgent()
 
 # adjust dish lists node
-def adjust_dish_lists_node(state: AgentState):
-    dishesToShow = state['dishesToShow']
-    dishesSeen = state['dishesSeen'] or []
-    dishesSeen = dishesSeen + dishesToShow[:min(len(dishesToShow), state['maxRecommendations'])]
-    for i in range(min(len(dishesToShow), state['maxRecommendations'])):
-        del dishesToShow[0]
-    return {"dishesToShow": dishesToShow, "dishesSeen": dishesSeen}
+more_dishes_agent = MoreDishesAgent()
 
 # change preferences agent
 def change_preferences_node(state: AgentState):
@@ -176,7 +170,7 @@ builder.add_node("dish_search", dish_search_agent.run)
 builder.add_node("list_former", list_former_agent.run)
 builder.add_node("show_dishes", show_dishes_agent.run)
 builder.add_node("research_dish", ResearchDishAgent.run)
-builder.add_node("more_dishes", adjust_dish_lists_node)
+builder.add_node("more_dishes", more_dishes_agent.run)
 builder.add_node("change_preferences", change_preferences_node)
 builder.add_node("show_dish", show_dish_node)
 builder.add_node("post_show_dish", post_show_dish_node)
@@ -190,7 +184,7 @@ builder.add_edge("change_preferences", "dish_search")
 
 # adds conditional edges
 builder.add_conditional_edges("list_former", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
-builder.add_conditional_edges("show_dishes", check_post_show_dishes_decision, {"researchDish": "research_dish", "seeMore": "more_dishes", "changePreference": "change_preferences"})
+builder.add_conditional_edges("show_dishes", check_post_show_dishes_decision, {"researchDish": "research_dish", "moreDishes": "more_dishes", "changePreferences": "change_preferences"})
 builder.add_conditional_edges("post_show_dish", check_post_show_dish_decision, {"yes": "show_dishes", "no": END})
 builder.add_conditional_edges("more_dishes", check_dishes_to_show, {True: "show_dishes", False: "dish_search"})
 

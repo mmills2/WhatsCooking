@@ -12,9 +12,9 @@ of these three options:
 {'decision': "researchDish",
 'foodDish': <food dish name>}
 
-{'decision': "seeMore"}
+{'decision': "moreDishes"}
 
-{'decision': "changePreference"}
+{'decision': "changePreferences"}
 
 If they would like to learn more about a dish but don't specify a food, ask them what dish they want to learn more about. \
 If their message does not align with any of these options, tell the user you do not understand their response and kindly ask to \
