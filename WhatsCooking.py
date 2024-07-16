@@ -4,6 +4,7 @@ _ = load_dotenv()
 
 # necessary imports
 import os
+import configparser
 from langgraph.graph import StateGraph, END
 from typing import TypedDict, List, Optional
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
@@ -304,9 +305,12 @@ builder.set_entry_point("greeter")
 # compiles graph so application can be run
 graph = builder.compile(checkpointer = memory)
 
-config = {"recursion_limit": 100, "configurable": {"thread_id": "1"}}
+config = configparser.ConfigParser()
+config.read('settings.ini')
+
+graphConfig = {"recursion_limit": 100, "configurable": {"thread_id": "1"}}
 
 # runs the application and prints out the AgentState after each node runs
-for event in graph.stream({"maxDishSearchResults": 3, "maxRecommendations": 10, "maxDishResearchResults": 3}, config):
+for event in graph.stream({"maxDishSearchResults": config['MAXES'].getint('dishSearchResults'), "maxRecommendations": config['MAXES'].getint('dishRecommendations'), "maxDishResearchResults": config['MAXES'].getint('dishResearchResults')}, graphConfig):
     # print(event)
     pass
