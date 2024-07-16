@@ -23,5 +23,5 @@ class GreeterAgent(Agent):
         pass
 
     def run(self, state: AgentState):
-        userDecision = Agent.question_user(self, "Hello! What kind of food are you in the mood for today? If you're not sure, that's totally okay. Do you have any preferences such as cuisine type (Italian, Mexican, Asian), dietary restrictions (vegetarian, gluten-free), or specific ingredients you'd like to include?", GREETER_PROMPT)
+        userDecision = super().question_user("Hello! What kind of food are you in the mood for today? If you're not sure, that's totally okay. Do you have any preferences such as cuisine type (Italian, Mexican, Asian), dietary restrictions (vegetarian, gluten-free), or specific ingredients you'd like to include?", GREETER_PROMPT)
         return {"userDecision": userDecision, "preferences": userDecision.preferences}

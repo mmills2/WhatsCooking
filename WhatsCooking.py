@@ -43,29 +43,6 @@ class Dishes(BaseModel):
 
 # system prompts for agents 
 
-POST_LIST_DISPLAY_PROMPT = """You are a manager deciding what action to take based on a user message. The user will say \
-something similar to one of three things:
-- They would like to learn more about a certain food dish
-- They would like to see more food dishes
-- They would like to change their food dish preferences
-Based on their message, decide which of these three options they would like to do. Based on your decision, reply with one \
-of these three options: 
-
-{'decision': "researchDish",
-'foodDish': <food dish name>}
-
-{'decision': "seeMore"}
-
-{'decision': "changePreference"}
-
-If they would like to learn more about a dish but don't specify a food, ask them what dish they want to learn more about. \
-If their message does not align with any of these options, tell the user you do not understand their response and kindly ask to \
-please choose one of the options. In both of these cases, reply with:
-
-{'decision': "insufficientResponse",
-'clarifyingRespone': <message to user>}
-"""
-
 RESEARCH_DISH_PROMPT = """You are a researcher with the task of researching a specific food dish. You must find a \
 description and recipe for the food dish. You may be given some preferences. Generate a list of search queries to find \
 this information on the given food dish. If you are given preferences, keep them in mind when gernerating the queries. \
@@ -149,15 +126,7 @@ def check_dishes_to_show(state: AgentState):
     return len(state['dishesToShow']) > 0
 
 # show dishes node
-def show_dishes_node(state: AgentState):
-    dishesToShow = state['dishesToShow']
-    print("\nHere are some dishes:")
-    for x in range(min(len(dishesToShow), state['maxRecommendations'])):
-        print(" " + dishesToShow[x])
-
-    userDecision = question_user("\nWould you like to learn more about one of these dishes, see more dishes, or change your preferences?", POST_LIST_DISPLAY_PROMPT)
-
-    return {"userDecision": userDecision}
+show_dishes_agent = ShowDishesAgent()
 
 # checks if user wants to learn more about a dish, see more dishes, or change their preferences
 def check_post_show_dishes_decision(state: AgentState):
@@ -220,7 +189,7 @@ builder = StateGraph(AgentState)
 builder.add_node("greeter", greeter_agent.run)
 builder.add_node("dish_search", dish_search_agent.run)
 builder.add_node("list_former", list_former_agent.run)
-builder.add_node("show_dishes", show_dishes_node)
+builder.add_node("show_dishes", show_dishes_agent.run)
 builder.add_node("research_dish", research_dish_node)
 builder.add_node("more_dishes", adjust_dish_lists_node)
 builder.add_node("change_preferences", change_preferences_node)
