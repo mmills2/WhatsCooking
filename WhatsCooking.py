@@ -43,11 +43,6 @@ class Dishes(BaseModel):
 
 # system prompts for agents 
 
-RESEARCH_DISH_PROMPT = """You are a researcher with the task of researching a specific food dish. You must find a \
-description and recipe for the food dish. You may be given some preferences. Generate a list of search queries to find \
-this information on the given food dish. If you are given preferences, keep them in mind when gernerating the queries. \
-Only generate 2 queries."""
-
 CHANGE_PREFERENCES_PROMPT = """You are a professional recipe recommender inquiring about what kind of recipe the user \
 would like to cook. Ask what their new food preferences are. Don't say anything after asking for preferences. If the \
 person gives preferences, make sure they are food related. If the preferences are food related or they have no preferences, \
@@ -133,17 +128,7 @@ def check_post_show_dishes_decision(state: AgentState):
     return state['userDecision'].decision
 
 # research dish agent
-def research_dish_node(state: AgentState):
-    generatedQueries = model.with_structured_output(Queries).invoke([
-        SystemMessage(content = RESEARCH_DISH_PROMPT),
-        HumanMessage(content = f"Food dish: {state['userDecision'].foodDish}\nPreferences: {state['preferences']}")
-    ])
-    dishResearchResults = []
-    for generatedQuery in generatedQueries.queriesList:
-        searchResults = tavily.search(query = generatedQuery, max_results = state['maxDishResearchResults'])
-        for searchResult in searchResults['results']:
-            dishResearchResults.append(searchResult['content'])
-    return {"dishResearchResults": dishResearchResults}
+research_dish_agent = ResearchDishAgent()
 
 # adjust dish lists node
 def adjust_dish_lists_node(state: AgentState):
@@ -190,7 +175,7 @@ builder.add_node("greeter", greeter_agent.run)
 builder.add_node("dish_search", dish_search_agent.run)
 builder.add_node("list_former", list_former_agent.run)
 builder.add_node("show_dishes", show_dishes_agent.run)
-builder.add_node("research_dish", research_dish_node)
+builder.add_node("research_dish", ResearchDishAgent.run)
 builder.add_node("more_dishes", adjust_dish_lists_node)
 builder.add_node("change_preferences", change_preferences_node)
 builder.add_node("show_dish", show_dish_node)
