@@ -9,7 +9,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver # used for state memory
 from agent_state import AgentState # state schema for StateGraph
 from agents import * # imports all agents from agents folder
 
-# initializing agents
+# initializes agents
 greeter_agent = GreeterAgent()
 dish_search_agent = DishSearchAgent()
 list_former_agent = ListFormerAgent()
