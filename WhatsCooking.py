@@ -2,47 +2,29 @@
 import configparser
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.sqlite import SqliteSaver
-
 from agent_state import AgentState
 from agents import *
 
-# used to save states of graph to allow returning to previous states and modifying states
-memory = SqliteSaver.from_conn_string(":memory:")
-
-# greeter agent
+# initializing agents
 greeter_agent = GreeterAgent()
-
-# dish searcher agent
 dish_search_agent = DishSearchAgent()
-
-# dish list former agent
 list_former_agent = ListFormerAgent()
+show_dishes_agent = ShowDishesAgent()
+research_dish_agent = ResearchDishAgent()
+more_dishes_agent = MoreDishesAgent()
+change_preferences_agent = ChangePreferencesAgent()
+show_dish_agent = ShowDishAgent()
+list_return_agent = ListReturnAgent()
+
+# check methods for conditional edges
 
 # dishes to show is greater than zero check
 def check_dishes_to_show(state: AgentState):
     return len(state['dishesToShow']) > 0
 
-# show dishes node
-show_dishes_agent = ShowDishesAgent()
-
 # checks if user wants to learn more about a dish, see more dishes, or change their preferences
 def check_post_show_dishes_decision(state: AgentState):
     return state['userDecision'].decision
-
-# research dish agent
-research_dish_agent = ResearchDishAgent()
-
-# adjust dish lists node
-more_dishes_agent = MoreDishesAgent()
-
-# change preferences agent
-change_preferences_agent = ChangePreferencesAgent()
-
-# show dish agent
-show_dish_agent = ShowDishAgent()
-
-# post show dish agent
-list_return_agent = ListReturnAgent()
 
 # checks if user wants to return to dishes after view a specific dish
 def check_post_show_dish_decision(state: AgentState):
@@ -77,6 +59,9 @@ builder.add_conditional_edges("more_dishes", check_dishes_to_show, {True: "show_
 
 # sets start of graph
 builder.set_entry_point("greeter")
+
+# used to save states of graph to allow returning to previous states and modifying states
+memory = SqliteSaver.from_conn_string(":memory:")
 
 # compiles graph so application can be run
 graph = builder.compile(checkpointer = memory)
