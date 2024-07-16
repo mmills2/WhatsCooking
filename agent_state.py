@@ -1,7 +1,8 @@
-from typing import TypedDict, List
-from structured_outputs import UserDecision
+# necessary imports
+from typing import TypedDict, List # used for variable type validation
+from structured_outputs import UserDecision # used as value in AgentState
 
-# stores inputs and outputs for nodes
+# state schema for StateGraph that stores input and output data for nodes
 class AgentState(TypedDict):
     userDecision: UserDecision
     preferences: str
