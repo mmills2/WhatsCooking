@@ -43,21 +43,6 @@ class Dishes(BaseModel):
 
 # system prompts for agents 
 
-CHANGE_PREFERENCES_PROMPT = """You are a professional recipe recommender inquiring about what kind of recipe the user \
-would like to cook. Ask what their new food preferences are. Don't say anything after asking for preferences. If the \
-person gives preferences, make sure they are food related. If the preferences are food related or they have no preferences, \
-respond with the following output:
-
-{'decision': "valid",
-'preferences': <user preferences>}
-
-If the preferences are not food related, tell the person sorry and kindly say you can only accept food related preferences. \
-Respond with the following output:
-
-{'decision': "insufficientResponse",
-'clarifyingRespone': <message to user>}
-"""
-
 SHOW_DISH_PROMPT = """You are a proffesional writer for a cook book. You will be given information about a specific food dish. You \
 must write a 2-3 sentence description on the food dish. Then you must write a list of required ingredients. Then you must write step by step \
 instructions on how to make the food dish. Don't say anything after the instructions. Use the below format for your output.
@@ -134,13 +119,7 @@ research_dish_agent = ResearchDishAgent()
 more_dishes_agent = MoreDishesAgent()
 
 # change preferences agent
-def change_preferences_node(state: AgentState):
-
-    userDecision = question_user("\nWhat are your new food preferences?", CHANGE_PREFERENCES_PROMPT)
-
-    dishesSeen = []
-    domainsVisited = []
-    return {"preferences": userDecision.preferences, "dishesSeen": dishesSeen, "domainsVisited": domainsVisited}
+change_preferences_agent = ChangePreferencesAgent()
 
 # show dish agent
 def show_dish_node(state: AgentState):
@@ -171,7 +150,7 @@ builder.add_node("list_former", list_former_agent.run)
 builder.add_node("show_dishes", show_dishes_agent.run)
 builder.add_node("research_dish", ResearchDishAgent.run)
 builder.add_node("more_dishes", more_dishes_agent.run)
-builder.add_node("change_preferences", change_preferences_node)
+builder.add_node("change_preferences", change_preferences_agent.run)
 builder.add_node("show_dish", show_dish_node)
 builder.add_node("post_show_dish", post_show_dish_node)
 
