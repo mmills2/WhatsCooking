@@ -13,6 +13,7 @@ class Agent:
     def __init__(self):
         pass
     
+    # user input validation loop
     def question_user(self, questionToUser: str, systemPrompt: str) -> UserDecision:
         print(questionToUser)
 

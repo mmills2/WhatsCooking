@@ -1,64 +1,13 @@
-# loads environment variables
-from dotenv import load_dotenv
-_ = load_dotenv()
-
 # necessary imports
-import os
 import configparser
 from langgraph.graph import StateGraph, END
-from typing import TypedDict, List, Optional
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from langchain_core.pydantic_v1 import BaseModel
-from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.sqlite import SqliteSaver
-from tavily import TavilyClient
-from urllib.parse import urlparse
 
 from agent_state import AgentState
 from agents import *
 
-# initializes OpenAI model
-model = ChatOpenAI(model="gpt-3.5-turbo", temperature = 0)
-
 # used to save states of graph to allow returning to previous states and modifying states
 memory = SqliteSaver.from_conn_string(":memory:")
-
-# initializes Tavily search engine tool
-tavily = TavilyClient(api_key = os.environ["TAVILY_API_KEY"])
-
-# store user's decision after being shown food dishes
-class UserDecision(BaseModel):
-    decision: str
-    preferences: Optional[str]
-    foodDish: Optional[str]
-    clarifyingRespone: Optional[str]
-
-# stores list of queries and provides structured output for generating queries
-class Queries(BaseModel):
-    queriesList: List[str]
-
-# stores list of dishes and provides structured output for forming list
-class Dishes(BaseModel):
-    dishesList: List[str]
-
-# user input validation loop
-def question_user(questionToUser: str, systemPrompt: str) -> UserDecision:
-    print(questionToUser)
-
-    messages = [
-        SystemMessage(content = systemPrompt),
-        AIMessage(content = questionToUser)    
-    ]
-    
-    userDecision = UserDecision(decision = "insufficientResponse")
-    while(userDecision.decision == "insufficientResponse"):
-        if(userDecision.clarifyingRespone):
-            print(userDecision.clarifyingRespone)
-            messages.append(AIMessage(content = userDecision.clarifyingRespone))
-        userInput = input(": ")
-        messages.append(HumanMessage(content = userInput))
-        userDecision = model.with_structured_output(UserDecision).invoke(messages)
-    return userDecision
 
 # greeter agent
 greeter_agent = GreeterAgent()
