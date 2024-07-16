@@ -1,4 +1,4 @@
-from agent import Agent
+from .agent import Agent
 from agent_state import AgentState
 
 GREETER_PROMPT = """You are a professional recipe recommender inquiring about what kind of recipe the user \

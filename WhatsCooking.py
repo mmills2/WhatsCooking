@@ -15,7 +15,7 @@ from tavily import TavilyClient
 from urllib.parse import urlparse
 
 from agent_state import AgentState
-from greeter import GreeterAgent
+from agents import GreeterAgent
 
 # initializes OpenAI model
 model = ChatOpenAI(model="gpt-3.5-turbo", temperature = 0)
