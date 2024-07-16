@@ -5,6 +5,7 @@ from structured_outputs import UserDecision
 class AgentState(TypedDict):
     userDecision: UserDecision
     preferences: str
+    numDishSearchQueries: int
     dishSearchResults: List[str]
     maxDishSearchResults: int
     dishesFromSearch: List[str]
@@ -12,5 +13,6 @@ class AgentState(TypedDict):
     dishesToShow: List[str]
     domainsVisited: List[str]
     maxRecommendations: int
+    numDishResearchQueries: int
     dishResearchResults: List[str]
     maxDishResearchResults: int

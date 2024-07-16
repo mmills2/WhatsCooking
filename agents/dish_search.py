@@ -14,7 +14,7 @@ tavily = TavilyClient(api_key = os.environ["TAVILY_API_KEY"])
 
 DISH_SEARCH_PROMPT = """You are a researcher with the task of finding food recipes. You may be given preferences \
 about the types of food recipes to find. Generate a list of search queries to find relevant food recipes. Only generate \
-1 query."""
+{} query(ies)."""
 
 class DishSearchAgent(Agent):
     def __init__(self):
@@ -22,7 +22,7 @@ class DishSearchAgent(Agent):
 
     def run(self, state: AgentState):
         generatedQueries = model.with_structured_output(Queries).invoke([
-            SystemMessage(content = DISH_SEARCH_PROMPT),
+            SystemMessage(content = DISH_SEARCH_PROMPT.format(state['numDishSearchQueries'])),
             HumanMessage(content = f"My food dish preferences are: {state['preferences']}")
         ])
         dishSearchResults = []

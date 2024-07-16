@@ -70,13 +70,15 @@ config = configparser.ConfigParser()
 config.read('settings.ini')
 
 graphInput = {
-    "maxDishSearchResults": config['MAXES'].getint('dishSearchResults'),
-    "maxRecommendations": config['MAXES'].getint('dishRecommendations'),
-    "maxDishResearchResults": config['MAXES'].getint('dishResearchResults')
+    "numDishSearchQueries": config['QUERIES'].getint('numDishSearchQueries'),
+    "maxDishSearchResults": config['MAXES'].getint('maxDishSearchResults'),
+    "maxRecommendations": config['MAXES'].getint('maxRecommendations'),
+    "numDishResearchQueries": config['QUERIES'].getint('numDishResearchQueries'),
+    "maxDishResearchResults": config['MAXES'].getint('maxDishResearchResults')
 }
 
 graphConfig = {
-    "recursion_limit": config['MAXES'].getint('recursion_limit'),
+    "recursion_limit": config['GRAPH.CONFIG'].getint('recursion_limit'),
     "configurable": {"thread_id": "1"}
 }
 
