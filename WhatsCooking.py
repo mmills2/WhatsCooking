@@ -41,13 +41,7 @@ class Queries(BaseModel):
 class Dishes(BaseModel):
     dishesList: List[str]
 
-# system prompts for agents
-
-DISH_LIST_FORMER_PROMPT = """You are a documenter with the task of documenting food dishes. You must record the \
-food dish name. Make sure the food dish name you record is a name of an actual food. You may be given preferences. \
-If you are given prefernces, only record the food dish name if the food dish aligns with the given prefences. Do not \
-include any information in the dish name besides the name of the dish. Do not include the word recipe in the dish name. \
-Capitalize the dish names as if they were a title. Return a list of food dish names based on the information provided.""" 
+# system prompts for agents 
 
 POST_LIST_DISPLAY_PROMPT = """You are a manager deciding what action to take based on a user message. The user will say \
 something similar to one of three things:
@@ -145,31 +139,10 @@ def question_user(questionToUser: str, systemPrompt: str) -> UserDecision:
 greeter_agent = GreeterAgent()
 
 # dish searcher agent
-# def dish_searcher_node(state: AgentState):
-#     generatedQueries = model.with_structured_output(Queries).invoke([
-#         SystemMessage(content = DISH_SEARCH_PROMPT),
-#         HumanMessage(content = f"My food dish preferences are: {state['preferences']}")
-#     ])
-#     dishSearchResults = []
-#     domainsVisited = state['domainsVisited'] or []
-#     for generatedQuery in generatedQueries.queriesList:
-#         searchResults = tavily.search(query = generatedQuery, max_results = state['maxDishSearchResults'], exclude_domains = state['domainsVisited'])
-#         for searchResult in searchResults['results']:
-#             domainsVisited.append(urlparse(searchResult['url']).netloc)
-#             dishSearchResults.append(searchResult['content'])
-#     return {"dishSearchResults": dishSearchResults, "domainsVisited": domainsVisited}
-
 dish_search_agent = DishSearchAgent()
 
 # dish list former agent
-def dish_list_former_node(state: AgentState):
-    dishesResearch = "\n\n".join(state['dishSearchResults'])
-    dishes = model.with_structured_output(Dishes).invoke([
-        SystemMessage(content = DISH_LIST_FORMER_PROMPT),
-        HumanMessage(content = f"Food dish prefences: {state['preferences']}\n{dishesResearch}")
-    ])
-    dishesToShow = list(set(dishes.dishesList) - set(state['dishesSeen'] or []))
-    return {"dishesFromSearch": dishes.dishesList, "dishesToShow": dishesToShow}
+list_former_agent = ListFormerAgent()
 
 # dishes to show is greater than zero check
 def check_dishes_to_show(state: AgentState):
@@ -246,7 +219,7 @@ builder = StateGraph(AgentState)
 # adds nodes to graph
 builder.add_node("greeter", greeter_agent.run)
 builder.add_node("dish_search", dish_search_agent.run)
-builder.add_node("list_former", dish_list_former_node)
+builder.add_node("list_former", list_former_agent.run)
 builder.add_node("show_dishes", show_dishes_node)
 builder.add_node("research_dish", research_dish_node)
 builder.add_node("more_dishes", adjust_dish_lists_node)

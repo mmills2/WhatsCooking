@@ -3,7 +3,7 @@ from agent_state import AgentState
 from structured_outputs import Queries
 from urllib.parse import urlparse
 from tavily import TavilyClient
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 import os
 
