@@ -15,3 +15,8 @@ What's Cooking is built up of nine LangGraph agents working together to give you
 7. LIST RETURN AGENT: Routes the user back to a previously shown list of food dishes
 8. SEE MORE DISHES AGENT: Shows more relevant food dishes
 9. CHANGE PREFERENCES AGENT: Gets the user's new food preferences if they want to change them
+
+## Example Generations
+
+![alt text](https://github.com/[username]/[reponame]/blob/[branch]/example_generations/exampleGenerationOne.png?raw=true)
+![alt text](https://github.com/[username]/[reponame]/blob/[branch]/example_generations/exampleGenerationTwo.png?raw=true)
