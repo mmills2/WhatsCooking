@@ -16,7 +16,15 @@ What's Cooking is built up of nine LangGraph agents working together to give you
 8. SEE MORE DISHES AGENT: Shows more relevant food dishes
 9. CHANGE PREFERENCES AGENT: Gets the user's new food preferences if they want to change them
 
-## Example Generations
+## Example Generation
 
-![screenshot](example_generations/exampleGenerationOne.png?raw=true)
-![screenshot](example_generations/exampleGenerationTwo.png?raw=true)
+![screenshot](example_generations/exampleGenerationOne.png)
+![screenshot](example_generations/exampleGenerationTwo.png)
+
+## How to Install
+
+### API Keys
+
+An OpenAI API key and Tavily API key are required for this application. Click the links below to sign up:
+[OpenAI API Key](https://platform.openai.com/)
+[Tavily API Key](https://tavily.com/)
