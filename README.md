@@ -25,6 +25,6 @@ What's Cooking is built up of nine LangGraph agents working together to give you
 
 ### API Keys
 
-An OpenAI API key and Tavily API key are required for this application. Click the links below to sign up:
-[OpenAI API Key](https://platform.openai.com/)
+An OpenAI API key and Tavily API key are required for this application. Click the links below to sign up:\
+[OpenAI API Key](https://platform.openai.com/)\
 [Tavily API Key](https://tavily.com/)
