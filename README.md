@@ -4,7 +4,7 @@ Have you ever desired to cook something new but you weren't sure what to cook? W
 
 ## Project Goals
 
-The goal of this project is to learn state of the art AI development tools including LangGraph and Tavily. Working on a text based project like this is great to focus just on learning the ropes of these powerful tools. The next goal would be to integrate this project into a web application.
+The goal of this project is to learn state of the art AI development tools including LangGraph and Tavily. Working on a text based project like this is great to focus on learning the ropes of these powerful tools. The next goal would be to integrate this project into a web application.
 
 ## Meet the Agents
 
@@ -74,7 +74,7 @@ Once you've made your pull request, it will be reviewed for merging.
 
 ## Architecture Notes
 
-The application consists of a main executable file (WhatsCooking.py), an agents package, and supporting files (agent_state.py, structured_outputs.py, and settings.ini). The main executable file compiles and executes the graph. This graph is made up of the agents defined in the agents package. The supporting files provide schemas used throughout the agent logic and configuration settings.
+The application consists of a main executable file (WhatsCooking.py), an agents package, and supporting files (agent_state.py, structured_outputs.py, and settings.ini). The main executable file compiles and executes the graph. This graph is made up of the agents defined in the agents package. The supporting files provide schemas used throughout the agent logic and allow for configuring application settings.
 
 ### WhatsCooking
 
@@ -94,4 +94,4 @@ The settings.ini file allows for control over various values used in the applica
 
 ## API Usage
 
-Currently, to reach the END node, the OpenAI API must be called a minimum of seven times and the Tavily API must be called twice. However, if the user gives invalid answers or uses the see more dishes and change preferences features, then both APIs will be called more times. Incorporating this project into an application with a GUI like a web application would reduce the number of API calls needed. The show dishes and list return agents are used for determining which node to route to next. They do this by processing the user's answer with AI as when using user text input, the text must be checked to be relevant. A GUI with buttons would circumvent the need for answer validation. For example, choosing to see more dishes could be done with the click of a see more button rather than invoking the AI to process the user's answer to see if they want to see more dishes. The Tavily API usage can be controlled directly within the settings.ini file. By setting the number of search queries for both search instances to one, the API will be called the minimum two times. However, allowing at least two to three queries typically results in better compiled outputs.
+Currently, to reach the END node, the OpenAI API must be called a minimum of seven times and the Tavily API must be called twice. However, if the user gives invalid answers or uses the see more dishes or change preferences features, then both APIs will be called more times. Incorporating this project into an application with a GUI, like a web application, would reduce the number of API calls needed. The show dishes and list return agents are used for determining which node to route to next. They do this by processing the user's answer with AI, as when using user text input, the text must be checked to be relevant. A GUI with buttons would circumvent the need for answer validation. For example, choosing to see more dishes could be done with the click of a see more button rather than invoking the AI to process the user's answer to see if they want to see more dishes. The Tavily API usage can be controlled directly within the settings.ini file. By setting the number of search queries for both search instances to one, the API will be called the minimum two times. However, allowing at least two to three queries typically results in better compiled outputs.
