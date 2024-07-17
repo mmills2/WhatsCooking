@@ -18,5 +18,5 @@ What's Cooking is built up of nine LangGraph agents working together to give you
 
 ## Example Generations
 
-![alt text](https://github.com/[username]/[reponame]/blob/[branch]/example_generations/exampleGenerationOne.png?raw=true)
-![alt text](https://github.com/[username]/[reponame]/blob/[branch]/example_generations/exampleGenerationTwo.png?raw=true)
+![screenshot](example_generations/exampleGenerationOne.png?raw=true)
+![screenshot](example_generations/exampleGenerationTwo.png?raw=true)
