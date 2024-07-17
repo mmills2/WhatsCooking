@@ -2,6 +2,10 @@
 
 Have you ever desired to cook something new but you weren't sure what to cook? What's Cooking finds just the right food dish for you to try out. Powered by AI agents, What's Cooking scours the internet for recipes based on your preferences, or if you have none, suggests some recipes to you.
 
+## Project Goals
+
+The goal of this project is to learn state of the art AI development tools including LangGraph and Tavily. Working on a text based project like this is great to focus just on learning the ropes of these powerful tools. The next goal would be to integrate this project into a web application.
+
 ## Meet the Agents
 
 What's Cooking is built up of nine LangGraph agents working together to give you the perfect recipe.
@@ -67,3 +71,11 @@ An OpenAI API key and Tavily API key are required for this application. Click th
 4. Make a pull request to merge your fork in
 
 Once you've made your pull request, it will be reviewed for merging.
+
+## Architecture Notes
+
+The application consists of a main executable file (WhatsCooking.py), an agents package, and supporting files (agent_state.py and structured_outputs.py). The main executable file compiles and executes the LangGraph. This LangGraph is made up of the agents defined in the agents package. The supporting files provide schemas used throughout the agent and graph logic.
+
+## API Usage
+
+Currently, to reach the END node, the OpenAI API must be called a minimum of seven times and the Tavily API must be called twice. However, if the user gives invalid answers or uses the seeing more dishes and changing preferences features, then both APIs will be called more times. Incorporating this project into an application with a GUI like a web application would reduce the number of API calls needed. The show dishes and list return agents are used for determining which node to route to next. They do this by processing the user's answer with AI as when using user text input, the text must be checked to be relevant. A GUI with buttons would circumvent the need for answer validation. For example, choosing to see more dishes could be done with the click of a see more button rather than invoking the AI to process the user's answer to see if they want to see more dishes. The Tavily API usage can be controlled directly within the settings.ini file. By setting the number of search queries for both search instances to one, the API will be called the minimum two times. However, allowing at least two to three queries typically results in better compiled outputs.
