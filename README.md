@@ -55,3 +55,15 @@ An OpenAI API key and Tavily API key are required for this application. Click th
    ```
    python WhatsCooking.py
    ```
+
+## How to Contribute
+
+1. Fork the repository from the master branch
+
+2. Develop and test on your fork
+
+3. Commit and push to your fork
+
+4. Make a pull request to merge your fork in
+
+Once you've made your pull request, it will be reviewed for merging.
