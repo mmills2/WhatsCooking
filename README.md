@@ -28,3 +28,30 @@ What's Cooking is built up of nine LangGraph agents working together to give you
 An OpenAI API key and Tavily API key are required for this application. Click the links below to sign up:\
 [OpenAI API Key](https://platform.openai.com/)\
 [Tavily API Key](https://tavily.com/)
+
+### Installing Project
+
+1. First clone the repository
+   ```
+   git clone https://github.com/mmills2/WhatsCooking.git
+   ```
+2. Then set your API keys
+   - Windows
+   ```
+   setx OPENAI_API_KEY = <your-openai-api-key>
+   setx TAVILY_API_KEY = <your-tavily-api-key>
+   ```
+   - Linux/Unix
+   ```
+   export OPENAI_API_KEY = <your-openai-api-key>
+   export TAVILY_API_KEY = <your-tavily-api-key>
+   ```
+   You may have to restart your terminal after setting the API keys for the set to take affect
+3. Then install the requirements
+   ```
+   pip install -r requirements.txt
+   ```
+4. Lastly run the WhatsCooking.py file
+   ```
+   python WhatsCooking.py
+   ```
