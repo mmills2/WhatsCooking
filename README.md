@@ -8,7 +8,7 @@ The goal of this project is to learn state of the art AI development tools inclu
 
 ## Meet the Agents
 
-What's Cooking is built up of nine LangGraph agents working together to give you the perfect recipe.
+What's Cooking is built up of nine agents working together to give you the perfect recipe.
 
 1. GREETER AGENT: Greets the user and gets their food preferences
 2. DISH SEARCH AGENT: Searches the internet for relevant food dishes
@@ -74,11 +74,23 @@ Once you've made your pull request, it will be reviewed for merging.
 
 ## Architecture Notes
 
-The application consists of a main executable file (WhatsCooking.py), an agents package, and supporting files (agent_state.py and structured_outputs.py). The main executable file compiles and executes the LangGraph. This LangGraph is made up of the agents defined in the agents package. The supporting files provide schemas used throughout the agent and graph logic.
+The application consists of a main executable file (WhatsCooking.py), an agents package, and supporting files (agent_state.py, structured_outputs.py, and settings.ini). The main executable file compiles and executes the graph. This graph is made up of the agents defined in the agents package. The supporting files provide schemas used throughout the agent logic and configuration settings.
+
+### WhatsCooking
+
+The main WhatsCooking file compiles all the agents into an executable graph. This is done by initializing the agents, adding each agent as a node to the graph, adding edges and conditional edgees between the nodes, setting an entry point to the graph, and compiling the graph. This compiled graph is run with some configuration settings set in the settings file. The callables for the conditional edges are also defined in WhatsCooking.
 
 ### Agents
 
-To add agents, create a new class in the agents package and make sure it inherits the agent parent class. Each agent should have an init method and run method. The run method is what will execute during graph execution. Each agent should be added to the init python file in the agents package. Each agent needs to be initialized, added as a node to the graph, and have edges added in the WhatsCooking file.
+Each agent in the agents package is its own class and inherits the agent parent class. They all have a run method that is executed when their node is called. The agents use the agent state to recieve inputs and deliver outputs for their code execution. Each agent needs to be initialized, added as a node to the graph, and have edges added in the WhatsCooking file.
+
+### Agent State and Structured Outputs
+
+These two files contain schemas used throughout all the agents. The agent state schema stores inputs and outputs of the agents. The structured outputs are used as output schemas for the some of the AI calls to ensure easy and consistent data processsing.
+
+### Settings
+
+The settings.ini file allows for control over various values used in the application. These include the number of queries generated for the searches, the number of results per query search, the number of food dish recommendations shown in the food dish list, and the max number of steps allowed through the graph before a GraphRecursionError is thrown.
 
 ## API Usage
 
